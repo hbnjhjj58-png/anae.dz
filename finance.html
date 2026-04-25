@@ -998,12 +998,8 @@ buildMonthSel();
 
 
 
-const SUPABASE_URL='https://fmmfofjkebdsrnkchrfo.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtbWZvZmprZWJkc3Jua2NocmZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MDAxNDIsImV4cCI6MjA5MjA3NjE0Mn0.bQQJt06mucLCQCrY1NgN-ed2ngDeRLmITmOfQCAM7ZU';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-let currentUser=null,isAdmin=false,allPOs=[],allSuppliers=[],priceHistory=[];
-let editingPOId=null,editingSupId=null,poLineId=0;
-let priceChartInst=null,supChartInst=null;
+// SB_URL, SB_KEY and sb already declared above
+// state vars declared above
 
 // (merged)
 (()=>{const t=localStorage.getItem('sd_theme')||localStorage.getItem('sp_theme')||'light';document.documentElement.setAttribute('data-theme',t);setTimeout(()=>{const b=document.getElementById('darkBtn');if(b&&t==='dark')b.textContent='☀️ Light';},50);})();
