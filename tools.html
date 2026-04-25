@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SteelDesk — Tools</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F5;--bg2:#E4E8EE;
+  --surface:#F8F9FB;--surface2:#ECEEF2;--surface3:#E2E5EA;
+  --border:#D6DAE1;--border2:#C4C9D2;
+  --text:#1B2232;--text2:#4A5568;--text3:#8896A8;--text4:#B8C2CC;
+  --accent:#185FA5;--accent-bg:#E3EDF8;--accent-mid:#4A8AC4;--accent-dark:#0E4178;
+  --green:#0E8A5F;--green-bg:#E0F5EC;--green-text:#0B6B49;
+  --amber:#C47D00;--amber-bg:#FDF3DC;--amber-text:#7A4D00;
+  --red:#CC3333;--red-bg:#FDEAEA;--red-text:#921F1F;
+  --purple:#6B5ED4;--purple-bg:#EEECFB;--purple-text:#4A3EAA;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:18px;
+  --shadow:0 1px 4px rgba(24,40,72,.08),0 1px 2px rgba(24,40,72,.04);
+  --sb-w:230px;
+}
+[data-theme="dark"]{
+  --bg:#0F1117;--bg2:#090B0F;
+  --surface:#181C24;--surface2:#1E2330;--surface3:#252B38;
+  --border:#2A3040;--border2:#353D50;
+  --text:#E8ECF2;--text2:#98A6B8;--text3:#58687A;--text4:#38455A;
+  --accent:#4A8AC4;--accent-bg:#0E1F38;--accent-mid:#185FA5;--accent-dark:#6AAEE0;
+  --green:#1DAE7A;--green-bg:#082A1C;--green-text:#3DD4A0;
+  --amber:#F0A820;--amber-bg:#281A02;--amber-text:#F8CC66;
+  --red:#E04848;--red-bg:#280C0C;--red-text:#EE8888;
+  --purple:#9B8EE8;--purple-bg:#1A1640;--purple-text:#BAB2F6;
+  --shadow:0 1px 4px rgba(0,0,0,.3);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* ── Auth ── */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:36px;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.1)}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.auth-logo-mark{width:34px;height:34px;background:var(--accent);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.auth-logo-mark svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2}
+.auth-logo-name{font-size:17px;font-weight:600;color:var(--text);letter-spacing:-.3px}
+.auth-logo-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.auth-title{font-size:18px;font-weight:600;margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--text3);margin-bottom:22px}
+.lbl{font-size:11px;font-weight:600;color:var(--text3);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.inp{width:100%;height:40px;border:1px solid var(--border);border-radius:var(--r-sm);padding:0 12px;font-size:13px;font-family:var(--sans);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.inp::placeholder{color:var(--text4)}
+.form-row{margin-bottom:13px}
+.auth-btn{width:100%;height:42px;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;margin-top:4px;transition:opacity .15s}
+.auth-btn:hover{opacity:.88}.auth-btn:disabled{opacity:.45;cursor:not-allowed}
+.auth-msg{font-size:12px;margin-top:12px;padding:10px 12px;border-radius:var(--r-sm);text-align:center;background:var(--red-bg);color:var(--red-text);display:none}
+
+/* ── App ── */
+html,body{height:100%}
+#app{display:none;height:100vh;overflow:hidden}
+.layout{display:flex;height:100%}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(10,14,24,.5);z-index:190;backdrop-filter:blur(2px)}
+.sb-overlay.open{display:block}
+/* Sidebar */
+.sidebar{width:230px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.sidebar.open{transform:translateX(0)}
+.sb-logo{padding:18px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-logo-mark{width:30px;height:30px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-mark svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
+.sb-logo-name{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.3px}
+.sb-logo-sub{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.sb-nav{flex:1;overflow-y:auto;padding:8px 0}
+.sb-sec{font-size:9px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.8px;padding:12px 18px 4px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:13px;color:var(--text2);text-decoration:none;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:var(--sans);transition:background .12s,color .12s;position:relative}
+.sb-item:hover{background:var(--surface2);color:var(--text)}
+.sb-item.active{background:var(--accent-bg);color:var(--accent);font-weight:500}
+.sb-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:var(--accent);border-radius:0 3px 3px 0}
+.sb-icon{width:16px;height:16px;flex-shrink:0;opacity:.6}
+.sb-item.active .sb-icon,.sb-item:hover .sb-icon{opacity:1}
+.sb-footer{padding:12px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+.sb-user-row{display:flex;align-items:center;gap:8px;padding:4px}
+.sb-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-user-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-user-role{font-size:10px;color:var(--text3)}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 16px;flex-shrink:0;z-index:100}
+.tb-menu{width:34px;height:34px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s}
+.tb-menu:hover{background:var(--surface3)}
+.tb-title{font-size:15px;font-weight:600;color:var(--text)}
+.tb-spacer{flex:1}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:32px;padding:0 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans);background:var(--surface);color:var(--text2);white-space:nowrap;transition:all .12s;text-decoration:none}
+.btn:hover{background:var(--surface2);color:var(--text)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-primary:hover{opacity:.88;background:var(--accent)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--text3)}.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-danger{background:var(--red-bg);color:var(--red-text);border-color:var(--red)}
+.btn-sm{height:28px;padding:0 10px;font-size:11px}
+.btn-xs{height:24px;padding:0 8px;font-size:10px}
+.lbl{font-size:11px;font-weight:600;color:var(--text3);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.inp{width:100%;height:38px;border:1px solid var(--border);border-radius:6px;padding:0 11px;font-size:13px;font-family:var(--sans);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.inp::placeholder{color:var(--text4)}
+select.inp{cursor:pointer}
+.inp.mono{font-family:var(--mono)}
+.form-row{margin-bottom:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+/* Tool tabs */
+.tool-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto;flex-shrink:0}
+.tool-tabs::-webkit-scrollbar{height:3px}.tool-tabs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.tool-tab{display:flex;align-items:center;gap:6px;height:44px;padding:0 16px;font-size:12px;font-weight:500;color:var(--text3);border:none;background:none;cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;white-space:nowrap;transition:color .12s,border-color .12s;flex-shrink:0}
+.tool-tab:hover{color:var(--text)}
+.tool-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tool-tab-icon{font-size:15px}
+/* Tool content */
+.tool-content{flex:1;overflow-y:auto;padding:20px}
+.tool-panel{display:none;max-width:820px;margin:0 auto}
+.tool-panel.active{display:block}
+.tool-title{font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px}
+.tool-desc{font-size:13px;color:var(--text3);margin-bottom:20px;line-height:1.5}
+.calc-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(24,40,72,.08)}
+.calc-card-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.result-multi{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:14px}
+.result-item{background:var(--accent-bg);border:1px solid var(--accent-mid);border-radius:10px;padding:12px;text-align:center}
+.result-item-label{font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.result-item-val{font-size:20px;font-weight:700;color:var(--accent);font-family:var(--mono)}
+.result-item-unit{font-size:11px;color:var(--accent-mid);margin-top:2px}
+.warn-box{background:var(--amber-bg);border:1px solid var(--amber);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--amber-text);margin-top:12px}
+.separator{height:1px;background:var(--border);margin:14px 0}
+.product-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+.product-tab{height:28px;padding:0 11px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:var(--sans);background:var(--surface);color:var(--text3);transition:all .12s}
+.product-tab:hover{border-color:var(--border2);color:var(--text)}
+.product-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* Grade converter */
+.grade-tbl-wrap{border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:14px}
+.grade-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.grade-tbl th{background:var(--surface2);color:var(--text3);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);position:sticky;top:0}
+.grade-tbl td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+.grade-tbl tr:last-child td{border-bottom:none}
+.grade-tbl tr:hover td{background:var(--surface2)}
+.grade-tbl tr.hl td{background:var(--accent-bg)}
+.grade-cell{font-weight:700;color:var(--text);font-family:var(--mono)}
+.search-grade{height:36px;border:1px solid var(--border);border-radius:6px;padding:0 12px;font-size:13px;font-family:var(--mono);background:var(--surface);color:var(--text);outline:none;width:100%;transition:border-color .15s}
+.search-grade:focus{border-color:var(--accent)}
+/* Slitting */
+.slit-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.slit-inp{height:32px;border:1px solid var(--border);border-radius:6px;padding:0 10px;font-size:12px;font-family:var(--mono);background:var(--surface);color:var(--text);outline:none;width:100px;transition:border-color .15s}
+.slit-inp:focus{border-color:var(--accent)}
+.slit-remove{width:26px;height:26px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text4);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.slit-remove:hover{background:var(--red-bg);color:var(--red-text);border-color:var(--red)}
+/* Hardness */
+.hardness-result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:14px}
+.hardness-item{background:var(--surface2);border-radius:10px;padding:12px;text-align:center}
+.hardness-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.hardness-val{font-size:22px;font-weight:700;color:var(--text);font-family:var(--mono)}
+.hardness-val.hl{color:var(--accent)}
+/* Incoterms */
+.inco-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:10px;margin-top:14px}
+.inco-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:border-color .15s}
+.inco-card:hover,.inco-card.active{border-color:var(--accent);background:var(--accent-bg)}
+.inco-code{font-size:18px;font-weight:700;color:var(--accent);font-family:var(--mono);margin-bottom:4px}
+.inco-name{font-size:12px;font-weight:500;color:var(--text);margin-bottom:6px}
+.inco-cat{font-size:10px;font-weight:600;padding:1px 7px;border-radius:20px}
+.inco-cat.any{background:var(--accent-bg);color:var(--accent)}
+.inco-cat.sea{background:var(--green-bg);color:var(--green-text)}
+.inco-detail{display:none;margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px}
+.inco-detail.open{display:block}
+.inco-party-row{display:flex;align-items:flex-start;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+.inco-party-row:last-child{border-bottom:none}
+.inco-party-label{width:140px;flex-shrink:0;font-weight:600;color:var(--text2)}
+/* Auth */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:36px;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.1)}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.auth-logo-mark{width:34px;height:34px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.auth-logo-mark svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2}
+.auth-logo-name{font-size:17px;font-weight:600;color:var(--text)}
+.auth-logo-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.auth-btn{width:100%;height:42px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:opacity .15s}
+.auth-btn:hover{opacity:.88}.auth-btn:disabled{opacity:.45}
+.auth-msg{font-size:12px;margin-top:12px;padding:10px;border-radius:6px;text-align:center;background:var(--red-bg);color:var(--red-text);display:none}
+/* Spinner / Toast */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:var(--surface);font-size:12px;font-weight:500;padding:10px 18px;border-radius:10px;z-index:999;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* AI Drawer */
+.ai-overlay{display:none;position:fixed;inset:0;background:rgba(10,14,24,.4);z-index:400;backdrop-filter:blur(2px)}
+.ai-overlay.open{display:block}
+.ai-drawer{position:fixed;bottom:0;left:0;right:0;z-index:401;background:var(--surface);border-top:1px solid var(--border);border-radius:18px 18px 0 0;height:62vh;max-height:500px;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:0 -8px 32px rgba(0,0,0,.12)}
+.ai-drawer.open{transform:translateY(0)}
+@media(min-width:768px){.ai-drawer{max-width:520px;left:50%;right:auto;transform:translateX(-50%) translateY(100%)}.ai-drawer.open{transform:translateX(-50%) translateY(0)}}
+.ai-handle{width:36px;height:4px;background:var(--border2);border-radius:4px;margin:10px auto 0}
+.ai-hdr{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ai-logo{width:26px;height:26px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.ai-logo svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2}
+.ai-title{font-size:13px;font-weight:600;color:var(--text)}
+.ai-ctx{font-size:10px;color:var(--text3);margin-top:1px}
+.ai-close{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ai-quick{display:flex;gap:4px;padding:7px 12px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+.ai-qp{height:22px;padding:0 9px;border:1px solid var(--border);border-radius:20px;font-size:10px;background:var(--surface);color:var(--text2);cursor:pointer;font-family:var(--sans);white-space:nowrap;transition:all .12s}
+.ai-qp:hover{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
+.ai-body{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:7px}
+.ai-msg-w{display:flex;flex-direction:column}
+.ai-msg-w.user{align-items:flex-end}
+.ai-msg{font-size:12px;line-height:1.6;padding:8px 11px;border-radius:10px;max-width:92%;word-break:break-word}
+.ai-msg.user{background:var(--accent);color:#fff;border-radius:10px 10px 2px 10px}
+.ai-msg.ai{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:2px 10px 10px 10px}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.ai-dots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--text4);margin-right:3px;animation:bounce .9s infinite}
+.ai-dots span:nth-child(2){animation-delay:.15s}.ai-dots span:nth-child(3){animation-delay:.3s}
+.ai-inp-row{padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:7px}
+.ai-inp{flex:1;height:34px;border:1px solid var(--border);border-radius:6px;padding:0 10px;font-size:12px;background:var(--surface);color:var(--text);font-family:var(--sans);outline:none}
+.ai-inp:focus{border-color:var(--accent)}
+.ai-send{width:34px;height:34px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-send:disabled{opacity:.4}
+.ai-float-btn{width:34px;height:34px;background:var(--accent);border:none;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative}
+.ai-dot{position:absolute;top:-2px;right:-2px;width:7px;height:7px;background:var(--green);border-radius:50%;border:2px solid var(--surface)}
+@media(max-width:768px){.g2,.g3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<!-- AUTH -->
+<div class="auth-wrap" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-mark"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+      <div><div class="auth-logo-name">SteelDesk</div><div class="auth-logo-sub">Trade OS</div></div>
+    </div>
+    <div class="form-row"><label class="lbl">Email</label><input class="inp" type="email" id="loginEmail" placeholder="you@company.com" autocomplete="email"></div>
+    <div class="form-row"><label class="lbl">Password</label><input class="inp" type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="auth-btn" id="loginBtn">Sign in</button>
+    <div class="auth-msg" id="authMsg"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="layout">
+  <div class="sb-overlay" id="sbOverlay"></div>
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-mark"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+      <div><div class="sb-logo-name">SteelDesk</div><div class="sb-logo-sub">Trade OS</div></div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-sec">Overview</div>
+      <a class="sb-item" href="dashboard.html"><svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="12" y="2" width="6" height="6" rx="1"/><rect x="2" y="12" width="6" height="6" rx="1"/><rect x="12" y="12" width="6" height="6" rx="1"/></svg>Dashboard</a>
+      <div class="sb-sec">Trade</div>
+      <a class="sb-item" href="deals.html"><svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h14M3 10h10M3 15h6"/></svg>Deals</a>
+      <a class="sb-item" href="stock.html"><svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2L2 6v8l8 4 8-4V6l-8-4z"/><path d="M2 6l8 4 8-4M10 10v8"/></svg>Stock</a>
+      <a class="sb-item" href="offers.html"><svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h12a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/><path d="M7 8h6M7 12h4"/></svg>Offers</a>
+      <a class="sb-item" href="logistics.html"><svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12h12l2-6H4L2 12z"/><circle cx="6" cy="16" r="1.5"/><circle cx="14" cy="16" r="1.5"/></svg>Logistics</a>
+      <div class="sb-sec">Business</div>
+      <a class="sb-item" href="finance.html"><svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2v16M6 6h6a2 2 0 010 4H8a2 2 0 010 4h7"/></svg>Finance</a>
+      <a class="sb-item" href="documents.html"><svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h10a1 1 0 011 1v13l-3-2-3 2-3-2-3 2V4a1 1 0 011-1z"/></svg>Documents</a>
+      <div class="sb-sec">Tools</div>
+      <a class="sb-item active" href="tools.html"><svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.5 2.5a3 3 0 00-3 3c0 .4.1.8.2 1.1L3.5 14.8a1 1 0 000 1.4l.3.3a1 1 0 001.4 0l8.2-8.2c.3.1.7.2 1.1.2a3 3 0 100-6z"/></svg>Tools</a>
+      <a class="sb-item" href="settings.html"><svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2"/></svg>Settings</a>
+    </div>
+    <div class="sb-footer">
+      <div class="sb-user-row">
+        <div class="sb-avatar" id="sbAvatar">—</div>
+        <div style="min-width:0"><div class="sb-user-name" id="userEmail">—</div><div class="sb-user-role" id="userRole">Member</div></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="darkBtn" style="width:100%;justify-content:flex-start;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 14A7 7 0 117 3a7 7 0 0010 11z"/></svg>Dark mode
+      </button>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn" style="width:100%;justify-content:flex-start;gap:6px;color:var(--red-text)">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 3h4a1 1 0 011 1v12a1 1 0 01-1 1h-4M8 7l-3 3 3 3M14 10H5"/></svg>Sign out
+      </button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="tb-menu" id="menuBtn"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>
+      <span class="tb-title">Tools</span>
+      <div class="tb-spacer"></div>
+      <button class="ai-float-btn" id="aiBtn" title="AI Assistant">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="8"/><path d="M7 9.5c0-1.1.9-2 2-2h2a2 2 0 012 2v.3a2 2 0 01-2 2H10l-1 2"/><circle cx="10" cy="15.5" r=".7" fill="currentColor" stroke="none"/></svg>
+        <div class="ai-dot"></div>
+      </button>
+    </header>
+
+    <div class="tool-tabs">
+      <button class="tool-tab active" data-tab="weight" onclick="setTab('weight',this)"><span class="tool-tab-icon">⚖️</span>Weight</button>
+      <button class="tool-tab" data-tab="slitting" onclick="setTab('slitting',this)"><span class="tool-tab-icon">✂️</span>Slitting</button>
+      <button class="tool-tab" data-tab="ctl" onclick="setTab('ctl',this)"><span class="tool-tab-icon">📐</span>Cut to Length</button>
+      <button class="tool-tab" data-tab="container" onclick="setTab('container',this)"><span class="tool-tab-icon">📦</span>Container</button>
+      <button class="tool-tab" data-tab="bend" onclick="setTab('bend',this)"><span class="tool-tab-icon">🔧</span>Bend</button>
+      <button class="tool-tab" data-tab="hardness" onclick="setTab('hardness',this)"><span class="tool-tab-icon">💎</span>Hardness</button>
+      <button class="tool-tab" data-tab="grade" onclick="setTab('grade',this)"><span class="tool-tab-icon">🔄</span>Grades</button>
+      <button class="tool-tab" data-tab="price" onclick="setTab('price',this)"><span class="tool-tab-icon">💰</span>Price</button>
+      <button class="tool-tab" data-tab="unit" onclick="setTab('unit',this)"><span class="tool-tab-icon">📏</span>Units</button>
+      <button class="tool-tab" data-tab="incoterms" onclick="setTab('incoterms',this)"><span class="tool-tab-icon">🚢</span>Incoterms</button>
+    </div>
+    <div class="tool-content">
+
+<!-- WEIGHT -->
+<div class="tool-panel active" id="panel-weight">
+  <div class="tool-title">Weight Calculator</div>
+  <div class="tool-desc">Calculate theoretical weight for any steel product type and dimensions.</div>
+  <div class="product-tabs">
+    <button class="product-tab active" data-p="coil" onclick="setProduct('coil',this)">Flat / Coil</button>
+    <button class="product-tab" data-p="plate" onclick="setProduct('plate',this)">Plate / Sheet</button>
+    <button class="product-tab" data-p="pipe" onclick="setProduct('pipe',this)">Pipe / Tube</button>
+    <button class="product-tab" data-p="round" onclick="setProduct('round',this)">Round Bar</button>
+    <button class="product-tab" data-p="square" onclick="setProduct('square',this)">Square Bar</button>
+    <button class="product-tab" data-p="hex" onclick="setProduct('hex',this)">Hex Bar</button>
+    <button class="product-tab" data-p="flat" onclick="setProduct('flat',this)">Flat Bar</button>
+    <button class="product-tab" data-p="angle" onclick="setProduct('angle',this)">Angle</button>
+  </div>
+  <div class="calc-card">
+    <div class="calc-card-title">Dimensions</div>
+    <div id="dims-coil">
+      <div class="g3">
+        <div class="form-row"><label class="lbl">Thickness (mm)</label><input class="inp mono" type="number" id="coil-t" placeholder="e.g. 0.5" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Width (mm)</label><input class="inp mono" type="number" id="coil-w" placeholder="e.g. 1000" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Length (mm) — 0 = full coil</label><input class="inp mono" type="number" id="coil-l" value="0" oninput="calcWeight()"></div>
+      </div>
+      <div class="g3">
+        <div class="form-row"><label class="lbl">Density (g/cm³)</label><input class="inp mono" type="number" id="coil-density" value="7.85" step="0.01" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Quantity</label><input class="inp mono" type="number" id="coil-qty" value="1" min="1" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Coil weight kg (override)</label><input class="inp mono" type="number" id="coil-coilwt" placeholder="optional" oninput="calcWeight()"></div>
+      </div>
+    </div>
+    <div id="dims-plate" style="display:none">
+      <div class="g3">
+        <div class="form-row"><label class="lbl">Thickness (mm)</label><input class="inp mono" type="number" id="plate-t" placeholder="e.g. 10" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Width (mm)</label><input class="inp mono" type="number" id="plate-w" placeholder="e.g. 1500" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Length (mm)</label><input class="inp mono" type="number" id="plate-l" placeholder="e.g. 6000" oninput="calcWeight()"></div>
+      </div>
+      <div class="g2">
+        <div class="form-row"><label class="lbl">Quantity (pcs)</label><input class="inp mono" type="number" id="plate-qty" value="1" min="1" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Density (g/cm³)</label><input class="inp mono" type="number" id="plate-density" value="7.85" step="0.01" oninput="calcWeight()"></div>
+      </div>
+    </div>
+    <div id="dims-pipe" style="display:none">
+      <div class="g3">
+        <div class="form-row"><label class="lbl">OD — outer diameter (mm)</label><input class="inp mono" type="number" id="pipe-od" placeholder="e.g. 114.3" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Wall thickness (mm)</label><input class="inp mono" type="number" id="pipe-wt" placeholder="e.g. 6.02" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Length (mm)</label><input class="inp mono" type="number" id="pipe-l" placeholder="e.g. 6000" oninput="calcWeight()"></div>
+      </div>
+      <div class="g2">
+        <div class="form-row"><label class="lbl">Quantity (pcs)</label><input class="inp mono" type="number" id="pipe-qty" value="1" min="1" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Density (g/cm³)</label><input class="inp mono" type="number" id="pipe-density" value="7.85" step="0.01" oninput="calcWeight()"></div>
+      </div>
+    </div>
+    <div id="dims-round" style="display:none">
+      <div class="g3">
+        <div class="form-row"><label class="lbl">Diameter (mm)</label><input class="inp mono" type="number" id="round-d" placeholder="e.g. 20" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Length (mm)</label><input class="inp mono" type="number" id="round-l" placeholder="e.g. 6000" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Quantity (pcs)</label><input class="inp mono" type="number" id="round-qty" value="1" min="1" oninput="calcWeight()"></div>
+      </div>
+    </div>
+    <div id="dims-square" style="display:none">
+      <div class="g3">
+        <div class="form-row"><label class="lbl">Side (mm)</label><input class="inp mono" type="number" id="sq-s" placeholder="e.g. 20" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Length (mm)</label><input class="inp mono" type="number" id="sq-l" placeholder="e.g. 6000" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Quantity (pcs)</label><input class="inp mono" type="number" id="sq-qty" value="1" min="1" oninput="calcWeight()"></div>
+      </div>
+    </div>
+    <div id="dims-hex" style="display:none">
+      <div class="g3">
+        <div class="form-row"><label class="lbl">A/F width (mm)</label><input class="inp mono" type="number" id="hex-af" placeholder="e.g. 24" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Length (mm)</label><input class="inp mono" type="number" id="hex-l" placeholder="e.g. 3000" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Quantity (pcs)</label><input class="inp mono" type="number" id="hex-qty" value="1" min="1" oninput="calcWeight()"></div>
+      </div>
+    </div>
+    <div id="dims-flat" style="display:none">
+      <div class="g3">
+        <div class="form-row"><label class="lbl">Width (mm)</label><input class="inp mono" type="number" id="flat-w" placeholder="e.g. 50" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Thickness (mm)</label><input class="inp mono" type="number" id="flat-t" placeholder="e.g. 6" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Length (mm)</label><input class="inp mono" type="number" id="flat-l" placeholder="e.g. 6000" oninput="calcWeight()"></div>
+      </div>
+      <div class="form-row" style="max-width:200px"><label class="lbl">Quantity (pcs)</label><input class="inp mono" type="number" id="flat-qty" value="1" min="1" oninput="calcWeight()"></div>
+    </div>
+    <div id="dims-angle" style="display:none">
+      <div class="g3">
+        <div class="form-row"><label class="lbl">Leg A (mm)</label><input class="inp mono" type="number" id="angle-a" placeholder="e.g. 50" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Leg B (mm)</label><input class="inp mono" type="number" id="angle-b" placeholder="e.g. 50" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Thickness (mm)</label><input class="inp mono" type="number" id="angle-t" placeholder="e.g. 5" oninput="calcWeight()"></div>
+      </div>
+      <div class="g2">
+        <div class="form-row"><label class="lbl">Length (mm)</label><input class="inp mono" type="number" id="angle-l" placeholder="e.g. 6000" oninput="calcWeight()"></div>
+        <div class="form-row"><label class="lbl">Quantity (pcs)</label><input class="inp mono" type="number" id="angle-qty" value="1" min="1" oninput="calcWeight()"></div>
+      </div>
+    </div>
+    <div id="weightResult" class="result-multi" style="display:none"></div>
+  </div>
+</div>
+
+<!-- SLITTING -->
+<div class="tool-panel" id="panel-slitting">
+  <div class="tool-title">Slitting Optimizer</div>
+  <div class="tool-desc">Find the best cutting pattern for a master coil to minimize trim loss.</div>
+  <div class="calc-card">
+    <div class="calc-card-title">Master coil settings</div>
+    <div class="g3">
+      <div class="form-row"><label class="lbl">Master width (mm)</label><input class="inp mono" type="number" id="slit-master" placeholder="e.g. 1250" oninput="runSlitting()"></div>
+      <div class="form-row"><label class="lbl">Min trim each side (mm)</label><input class="inp mono" type="number" id="slit-mintrim" value="10" oninput="runSlitting()"></div>
+      <div class="form-row"><label class="lbl">Blade kerf (mm)</label><input class="inp mono" type="number" id="slit-kerf" value="1.5" step="0.1" oninput="runSlitting()"></div>
+    </div>
+  </div>
+  <div class="calc-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="calc-card-title" style="margin-bottom:0">Required slit widths</div>
+      <button class="btn btn-sm btn-primary" onclick="addSlitWidth()">+ Add width</button>
+    </div>
+    <div id="slitWidthsList"></div>
+  </div>
+  <div id="slitResult" style="display:none">
+    <div class="calc-card"><div class="calc-card-title">Cutting plan</div><div id="slitResultBody"></div></div>
+  </div>
+</div>
+
+<!-- CUT TO LENGTH -->
+<div class="tool-panel" id="panel-ctl">
+  <div class="tool-title">Cut to Length Optimizer</div>
+  <div class="tool-desc">Enter master length and required cut lengths. Minimizes scrap using first-fit decreasing algorithm.</div>
+  <div class="calc-card">
+    <div class="calc-card-title">Master piece</div>
+    <div class="g3">
+      <div class="form-row"><label class="lbl">Master length (mm)</label><input class="inp mono" type="number" id="ctl-master" placeholder="e.g. 6000" oninput="runCTL()"></div>
+      <div class="form-row"><label class="lbl">Saw kerf (mm)</label><input class="inp mono" type="number" id="ctl-kerf" value="3" step="0.5" oninput="runCTL()"></div>
+      <div class="form-row"><label class="lbl">Available pieces</label><input class="inp mono" type="number" id="ctl-stock" value="1" min="1" oninput="runCTL()"></div>
+    </div>
+  </div>
+  <div class="calc-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="calc-card-title" style="margin-bottom:0">Required cuts</div>
+      <button class="btn btn-sm btn-primary" onclick="addCTLRow()">+ Add length</button>
+    </div>
+    <div id="ctlLengthsList"></div>
+  </div>
+  <div id="ctlResult" style="display:none">
+    <div class="calc-card"><div class="calc-card-title">Cutting plan</div><div id="ctlResultBody"></div></div>
+  </div>
+</div>
+
+<!-- CONTAINER -->
+<div class="tool-panel" id="panel-container">
+  <div class="tool-title">Container &amp; Truck Load Calculator</div>
+  <div class="tool-desc">Calculate load capacity for containers and trucks — both weight and volume limits.</div>
+  <div class="calc-card">
+    <div class="calc-card-title">Product</div>
+    <div class="g3">
+      <div class="form-row"><label class="lbl">Length (mm)</label><input class="inp mono" type="number" id="cont-l" placeholder="e.g. 6000" oninput="calcContainer()"></div>
+      <div class="form-row"><label class="lbl">Width (mm)</label><input class="inp mono" type="number" id="cont-w" placeholder="e.g. 1500" oninput="calcContainer()"></div>
+      <div class="form-row"><label class="lbl">Height / Thickness (mm)</label><input class="inp mono" type="number" id="cont-h" placeholder="e.g. 10" oninput="calcContainer()"></div>
+    </div>
+    <div class="g2">
+      <div class="form-row"><label class="lbl">Weight per piece (kg)</label><input class="inp mono" type="number" id="cont-wt" placeholder="optional" oninput="calcContainer()"></div>
+      <div class="form-row"><label class="lbl">Stackable layers</label><input class="inp mono" type="number" id="cont-layers" value="1" min="1" oninput="calcContainer()"></div>
+    </div>
+  </div>
+  <div class="calc-card">
+    <div class="calc-card-title">Vessel / vehicle</div>
+    <div class="product-tabs" id="contTypeTabs">
+      <button class="product-tab active" data-cont="20ft" onclick="setContType(this)">20ft Container</button>
+      <button class="product-tab" data-cont="40ft" onclick="setContType(this)">40ft Container</button>
+      <button class="product-tab" data-cont="40hc" onclick="setContType(this)">40ft HC</button>
+      <button class="product-tab" data-cont="truck" onclick="setContType(this)">Truck 13.6m</button>
+      <button class="product-tab" data-cont="megatruck" onclick="setContType(this)">Mega Truck</button>
+    </div>
+    <div id="contSpecs" style="font-size:11px;color:var(--text3);margin-top:8px;font-family:var(--mono)"></div>
+  </div>
+  <div id="containerResult" style="display:none">
+    <div class="result-multi" id="containerResultBody"></div>
+    <div id="containerWarn" class="warn-box" style="display:none"></div>
+  </div>
+</div>
+
+<!-- BEND -->
+<div class="tool-panel" id="panel-bend">
+  <div class="tool-title">Bend Allowance Calculator</div>
+  <div class="tool-desc">Calculate bend allowance, bend deduction and developed blank length for sheet metal bending.</div>
+  <div class="calc-card">
+    <div class="calc-card-title">Bend parameters</div>
+    <div class="g2">
+      <div class="form-row"><label class="lbl">Material thickness (mm)</label><input class="inp mono" type="number" id="bend-t" placeholder="e.g. 3" step="0.1" oninput="calcBend()"></div>
+      <div class="form-row"><label class="lbl">Inside bend radius (mm)</label><input class="inp mono" type="number" id="bend-r" placeholder="e.g. 3" step="0.1" oninput="calcBend()"></div>
+    </div>
+    <div class="g2">
+      <div class="form-row"><label class="lbl">Bend angle (°)</label><input class="inp mono" type="number" id="bend-angle" placeholder="e.g. 90" min="1" max="179" oninput="calcBend()"></div>
+      <div class="form-row"><label class="lbl">K-factor</label>
+        <select class="inp" id="bend-k" onchange="calcBend()">
+          <option value="0.33">0.33 — Soft / large radius</option>
+          <option value="0.38" selected>0.38 — Mild steel, air bend</option>
+          <option value="0.42">0.42 — Mild steel, coin bend</option>
+          <option value="0.45">0.45 — Hard alloys</option>
+          <option value="0.50">0.50 — Theoretical</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label class="lbl">Flat legs (for blank length)</label>
+      <div class="g2"><input class="inp mono" type="number" id="bend-leg1" placeholder="Leg A (mm)" oninput="calcBend()"><input class="inp mono" type="number" id="bend-leg2" placeholder="Leg B (mm)" oninput="calcBend()"></div>
+    </div>
+    <div id="bendResult" class="result-multi" style="display:none"></div>
+  </div>
+  <div class="calc-card">
+    <div class="calc-card-title">K-factor guide</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.9">
+      <div><strong>0.33</strong> — Soft copper, aluminium, large radius (r/t &gt; 5)</div>
+      <div><strong>0.38</strong> — Mild steel S235/A36 air bending — most common</div>
+      <div><strong>0.42</strong> — Mild steel coin / bottom bending</div>
+      <div><strong>0.45</strong> — Hard steel, stainless steel</div>
+      <div><strong>0.50</strong> — Perfect neutral axis (theoretical)</div>
+    </div>
+  </div>
+</div>
+
+<!-- HARDNESS -->
+<div class="tool-panel" id="panel-hardness">
+  <div class="tool-title">Hardness Converter</div>
+  <div class="tool-desc">Convert between HRC, HRB, Brinell (HB), Vickers (HV) and tensile strength (MPa / ksi).</div>
+  <div class="calc-card">
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+      <div class="form-row" style="margin-bottom:0;flex:1;max-width:200px"><label class="lbl">Value</label><input class="inp mono" type="number" id="hard-val" placeholder="e.g. 45" oninput="calcHardness()"></div>
+      <div class="form-row" style="margin-bottom:0"><label class="lbl">Scale</label>
+        <select class="inp" id="hard-scale" onchange="calcHardness()" style="width:160px">
+          <option value="hrc">HRC — Rockwell C</option>
+          <option value="hrb">HRB — Rockwell B</option>
+          <option value="hb">HB — Brinell</option>
+          <option value="hv">HV — Vickers</option>
+          <option value="mpa">MPa — Tensile</option>
+        </select>
+      </div>
+    </div>
+    <div class="hardness-result-grid" id="hardnessResult" style="display:none"></div>
+    <div id="hardnessNote" class="warn-box" style="display:none;background:var(--surface2);color:var(--text2);border-color:var(--border)"></div>
+  </div>
+  <div class="calc-card">
+    <div class="calc-card-title">Reference table</div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="background:var(--surface2)">
+          <th style="padding:6px 10px;border-bottom:1px solid var(--border);text-align:left;color:var(--text3);font-weight:600">HRC</th>
+          <th style="padding:6px 10px;border-bottom:1px solid var(--border);text-align:left;color:var(--text3);font-weight:600">HB</th>
+          <th style="padding:6px 10px;border-bottom:1px solid var(--border);text-align:left;color:var(--text3);font-weight:600">HV</th>
+          <th style="padding:6px 10px;border-bottom:1px solid var(--border);text-align:left;color:var(--text3);font-weight:600">MPa</th>
+          <th style="padding:6px 10px;border-bottom:1px solid var(--border);text-align:left;color:var(--text3);font-weight:600">Typical</th>
+        </tr></thead>
+        <tbody id="hardRefTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- GRADE CONVERTER -->
+<div class="tool-panel" id="panel-grade">
+  <div class="tool-title">Grade Converter</div>
+  <div class="tool-desc">Search and convert between EN/DIN, ASTM, JIS, GB and Turkish mill equivalents. Data from your Supabase database — admin can add and edit grades.</div>
+  <div class="calc-card">
+    <div class="calc-card-title">Search</div>
+    <input class="search-grade" id="gradeSearch" placeholder="Type any grade — S355, A36, DX51D, SPH, Q235, St52…" oninput="searchGrades(this.value)">
+    <div id="gradeStats" style="font-size:11px;color:var(--text3);margin-top:8px"></div>
+  </div>
+  <div class="grade-tbl-wrap">
+    <table class="grade-tbl">
+      <thead><tr>
+        <th>EN / European</th><th>DIN (old)</th><th>ASTM / US</th>
+        <th>JIS / Japanese</th><th>GB / Chinese</th><th>Erdemir (TR)</th><th>Tosyali (TR)</th>
+      </tr></thead>
+      <tbody id="gradeTblBody"><tr><td colspan="7" style="padding:24px;text-align:center;color:var(--text4)"><span class="spinner"></span> Loading grades…</td></tr></tbody>
+    </table>
+  </div>
+  <div id="adminGradeSection" style="display:none;margin-top:14px">
+    <div class="calc-card">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="calc-card-title" style="margin-bottom:0">Admin — manage grades</div>
+        <button class="btn btn-sm btn-primary" onclick="openGradeModal()">+ Add grade</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICE CALCULATOR -->
+<div class="tool-panel" id="panel-price">
+  <div class="tool-title">Price Calculator</div>
+  <div class="tool-desc">Calculate sell price from costs and margin. All values per metric ton unless specified.</div>
+  <div class="calc-card">
+    <div class="calc-card-title">Cost breakdown</div>
+    <div class="g2">
+      <div class="form-row"><label class="lbl">Buy price / ton</label><input class="inp mono" type="number" id="pc-buy" placeholder="e.g. 620" oninput="calcPrice()"></div>
+      <div class="form-row"><label class="lbl">Currency</label>
+        <select class="inp" id="pc-cur" onchange="calcPrice()">
+          <option>USD</option><option>EUR</option><option>GBP</option><option>TRY</option>
+        </select>
+      </div>
+    </div>
+    <div class="g3">
+      <div class="form-row"><label class="lbl">Freight / ton</label><input class="inp mono" type="number" id="pc-freight" value="0" oninput="calcPrice()"></div>
+      <div class="form-row"><label class="lbl">Port / customs / ton</label><input class="inp mono" type="number" id="pc-port" value="0" oninput="calcPrice()"></div>
+      <div class="form-row"><label class="lbl">Other costs / ton</label><input class="inp mono" type="number" id="pc-other" value="0" oninput="calcPrice()"></div>
+    </div>
+    <div class="separator"></div>
+    <div class="g2">
+      <div class="form-row"><label class="lbl">Margin</label><input class="inp mono" type="number" id="pc-margin" placeholder="e.g. 15" oninput="calcPrice()"></div>
+      <div class="form-row"><label class="lbl">Margin type</label>
+        <select class="inp" id="pc-margin-type" onchange="calcPrice()">
+          <option value="pct">% of total cost</option>
+          <option value="fixed">Fixed amount / ton</option>
+        </select>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="form-row"><label class="lbl">Quantity (tons)</label><input class="inp mono" type="number" id="pc-qty" value="1" min="0" oninput="calcPrice()"></div>
+      <div class="form-row"><label class="lbl">Incoterms (reference)</label>
+        <select class="inp" id="pc-inco">
+          <option value="">—</option><option>EXW</option><option>FOB</option><option>CFR</option><option>CIF</option><option>DAP</option><option>DDP</option>
+        </select>
+      </div>
+    </div>
+    <div id="priceResult" class="result-multi" style="display:none"></div>
+  </div>
+</div>
+
+<!-- UNIT CONVERTER -->
+<div class="tool-panel" id="panel-unit">
+  <div class="tool-title">Unit Converter</div>
+  <div class="tool-desc">Instant conversion between units used in steel trading. Type in any field.</div>
+  <div class="g2" style="gap:14px">
+    <div class="calc-card">
+      <div class="calc-card-title">📏 Length</div>
+      <div class="form-row"><label class="lbl">Millimetres (mm)</label><input class="inp mono" type="number" id="len-mm" placeholder="0" oninput="convertUnit('len','mm',this.value)"></div>
+      <div class="form-row"><label class="lbl">Centimetres (cm)</label><input class="inp mono" type="number" id="len-cm" placeholder="0" oninput="convertUnit('len','cm',this.value)"></div>
+      <div class="form-row"><label class="lbl">Metres (m)</label><input class="inp mono" type="number" id="len-m" placeholder="0" oninput="convertUnit('len','m',this.value)"></div>
+      <div class="form-row"><label class="lbl">Inches (in)</label><input class="inp mono" type="number" id="len-in" placeholder="0" oninput="convertUnit('len','in',this.value)"></div>
+      <div class="form-row" style="margin-bottom:0"><label class="lbl">Feet (ft)</label><input class="inp mono" type="number" id="len-ft" placeholder="0" oninput="convertUnit('len','ft',this.value)"></div>
+    </div>
+    <div class="calc-card">
+      <div class="calc-card-title">⚖️ Weight</div>
+      <div class="form-row"><label class="lbl">Kilograms (kg)</label><input class="inp mono" type="number" id="wt-kg" placeholder="0" oninput="convertUnit('wt','kg',this.value)"></div>
+      <div class="form-row"><label class="lbl">Metric tons (t)</label><input class="inp mono" type="number" id="wt-t" placeholder="0" oninput="convertUnit('wt','t',this.value)"></div>
+      <div class="form-row"><label class="lbl">Long tons (LT)</label><input class="inp mono" type="number" id="wt-lt" placeholder="0" oninput="convertUnit('wt','lt',this.value)"></div>
+      <div class="form-row"><label class="lbl">Short tons (ST)</label><input class="inp mono" type="number" id="wt-st" placeholder="0" oninput="convertUnit('wt','st',this.value)"></div>
+      <div class="form-row" style="margin-bottom:0"><label class="lbl">Pounds (lb)</label><input class="inp mono" type="number" id="wt-lb" placeholder="0" oninput="convertUnit('wt','lb',this.value)"></div>
+    </div>
+    <div class="calc-card">
+      <div class="calc-card-title">🌡 Temperature</div>
+      <div class="form-row"><label class="lbl">Celsius (°C)</label><input class="inp mono" type="number" id="temp-c" placeholder="0" oninput="convertUnit('temp','c',this.value)"></div>
+      <div class="form-row" style="margin-bottom:0"><label class="lbl">Fahrenheit (°F)</label><input class="inp mono" type="number" id="temp-f" placeholder="0" oninput="convertUnit('temp','f',this.value)"></div>
+    </div>
+    <div class="calc-card">
+      <div class="calc-card-title">💨 Pressure / Strength</div>
+      <div class="form-row"><label class="lbl">MPa</label><input class="inp mono" type="number" id="prs-mpa" placeholder="0" oninput="convertUnit('prs','mpa',this.value)"></div>
+      <div class="form-row"><label class="lbl">ksi (kip/in²)</label><input class="inp mono" type="number" id="prs-ksi" placeholder="0" oninput="convertUnit('prs','ksi',this.value)"></div>
+      <div class="form-row"><label class="lbl">N/mm²</label><input class="inp mono" type="number" id="prs-nmm" placeholder="0" oninput="convertUnit('prs','nmm',this.value)"></div>
+      <div class="form-row" style="margin-bottom:0"><label class="lbl">bar</label><input class="inp mono" type="number" id="prs-bar" placeholder="0" oninput="convertUnit('prs','bar',this.value)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- INCOTERMS -->
+<div class="tool-panel" id="panel-incoterms">
+  <div class="tool-title">Incoterms 2020 Reference</div>
+  <div class="tool-desc">Click any term for a full breakdown of seller and buyer responsibilities.</div>
+  <div class="inco-grid" id="incoGrid"></div>
+  <div class="inco-detail" id="incoDetail"></div>
+</div>
+
+    </div><!-- /tool-content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- Grade modal -->
+<div style="position:fixed;inset:0;background:rgba(10,14,24,.55);display:none;align-items:center;justify-content:center;z-index:500;padding:16px;backdrop-filter:blur(3px)" id="gradeModal">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text)" id="gradeModalTitle">Add Grade Mapping</div>
+    <div class="g3">
+      <div class="form-row"><label class="lbl">EN grade *</label><input class="inp mono" id="gm-en" placeholder="e.g. S355JR"></div>
+      <div class="form-row"><label class="lbl">DIN (old)</label><input class="inp mono" id="gm-din" placeholder="e.g. St52-3"></div>
+      <div class="form-row"><label class="lbl">ASTM</label><input class="inp mono" id="gm-astm" placeholder="e.g. A572 Gr50"></div>
+    </div>
+    <div class="g3">
+      <div class="form-row"><label class="lbl">JIS</label><input class="inp mono" id="gm-jis" placeholder="e.g. SM490A"></div>
+      <div class="form-row"><label class="lbl">GB (Chinese)</label><input class="inp mono" id="gm-gb" placeholder="e.g. Q345B"></div>
+      <div class="form-row"><label class="lbl">Erdemir (TR)</label><input class="inp mono" id="gm-erdemir" placeholder="code"></div>
+    </div>
+    <div class="form-row" style="max-width:200px"><label class="lbl">Tosyali (TR)</label><input class="inp mono" id="gm-tosyali" placeholder="code"></div>
+    <div style="display:flex;justify-content:space-between;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="closeGradeModal()">Cancel</button>
+        <button class="btn btn-danger btn-sm" id="gradeDeleteBtn" onclick="deleteGrade()" style="display:none">Delete</button>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveGrade()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI Drawer -->
+<div class="ai-overlay" id="aiOverlay"></div>
+<div class="ai-drawer" id="aiDrawer">
+  <div class="ai-handle"></div>
+  <div class="ai-hdr">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="ai-logo"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" fill="none"/><path d="M7 9.5c0-1.1.9-2 2-2h2a2 2 0 012 2v.3a2 2 0 01-2 2H10l-1 2" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="10" cy="15.5" r=".7" fill="currentColor"/></svg></div>
+      <div><div class="ai-title">AI Assistant</div><div class="ai-ctx" id="aiCtx">Tools</div></div>
+    </div>
+    <button class="ai-close" onclick="closeAI()"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+  </div>
+  <div class="ai-quick">
+    <button class="ai-qp" onclick="aiQuick('Weight of S355 plate 10mm x 1500mm x 6000mm?')">Weight calc</button>
+    <button class="ai-qp" onclick="aiQuick('Convert S355JR to ASTM and JIS equivalents.')">Grade convert</button>
+    <button class="ai-qp" onclick="aiQuick('Explain the difference between FOB, CFR and CIF. Which is best for Algeria?')">Incoterms help</button>
+    <button class="ai-qp" onclick="aiQuick('I buy at $620/ton, freight $45, port $20, I want 15% margin. What is my sell price?')">Price calc</button>
+  </div>
+  <div class="ai-body" id="aiBody">
+    <div class="ai-msg-w"><div class="ai-msg ai">Ask me anything — weight calculations, grade conversions, Incoterms, price calculations, or any steel trade question.</div></div>
+  </div>
+  <div class="ai-inp-row">
+    <input class="ai-inp" id="aiInput" placeholder="Ask a question…" onkeydown="if(event.key==='Enter')aiSend()">
+    <button class="ai-send" id="aiSendBtn" onclick="aiSend()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><line x1="18" y1="2" x2="9" y2="11" stroke="white" stroke-width="2.2"/><polygon points="18 2 12 18 9 11 2 8 18 2" fill="white"/></svg></button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+
+const SB_URL='https://fmmfofjkebdsrnkchrfo.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtbWZvZmprZWJkc3Jua2NocmZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MDAxNDIsImV4cCI6MjA5MjA3NjE0Mn0.bQQJt06mucLCQCrY1NgN-ed2ngDeRLmITmOfQCAM7ZU';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+let currentUser=null,isAdmin=false,allGrades=[],editingGradeId=null;
+let currentProduct='coil',currentContType='20ft';
+let slitIdC=0,ctlIdC=0;
+
+function fmt(n,dp=2){return Number(n||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:dp});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+let _tt=null;
+function toast(msg,type='ok'){const el=document.getElementById('toast');el.textContent=msg;el.style.background=type==='err'?'var(--red-text)':'var(--text)';el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2500);}
+
+// Dark mode
+function toggleDark(){const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('sd_theme',t);updateDarkBtn(t);}
+function updateDarkBtn(t){const b=document.getElementById('darkBtn');if(!b)return;b.innerHTML=t==='dark'?'<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="4"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2"/></svg> Light mode':'<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 14A7 7 0 117 3a7 7 0 0010 11z"/></svg> Dark mode';}
+(()=>{const t=localStorage.getItem('sd_theme')||localStorage.getItem('sp_theme')||'light';document.documentElement.setAttribute('data-theme',t);setTimeout(()=>updateDarkBtn(t),50);})();
+
+// Sidebar
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sbOverlay').classList.add('open');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sbOverlay').classList.remove('open');}
+
+// Auth
+function showAuthMsg(m){const e=document.getElementById('authMsg');e.textContent=m;e.style.display='block';}
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim(),pass=document.getElementById('loginPassword').value;
+  if(!email||!pass)return showAuthMsg('Please fill in all fields.');
+  const btn=document.getElementById('loginBtn');btn.disabled=true;btn.textContent='Signing in...';
+  const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  btn.disabled=false;btn.textContent='Sign in';
+  if(error)return showAuthMsg(error.message);
+  onSignedIn(data.user);
+}
+async function onSignedIn(user){
+  currentUser=user;
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  const email=user.email||'';
+  document.getElementById('userEmail').textContent=email;
+  document.getElementById('sbAvatar').textContent=(email.split('@')[0]||'?').slice(0,2).toUpperCase();
+  const{data:prof}=await sb.from('profiles').select('is_admin,full_name').eq('id',user.id).single();
+  isAdmin=!!prof?.is_admin;
+  if(isAdmin){document.getElementById('adminGradeSection').style.display='block';document.getElementById('userRole').textContent='Admin';}
+  if(prof?.full_name){document.getElementById('userEmail').textContent=prof.full_name;const nm=prof.full_name.split(' ');document.getElementById('sbAvatar').textContent=((nm[0]||'?')[0]+(nm[1]||'')[0]||'?').toUpperCase();}
+  loadGrades();initContSpecs();initIncoterms();initSlitting();initCTL();initHardnessRef();
+}
+sb.auth.getSession().then(({data:{session}})=>{if(session)onSignedIn(session.user);});
+document.getElementById('loginBtn').addEventListener('click',doLogin);
+document.getElementById('loginEmail').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('menuBtn').addEventListener('click',openSidebar);
+document.getElementById('sbOverlay').addEventListener('click',closeSidebar);
+document.getElementById('darkBtn').addEventListener('click',toggleDark);
+document.getElementById('logoutBtn').addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
+
+// Tab switching
+function setTab(tab,el){
+  document.querySelectorAll('.tool-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  document.getElementById('aiCtx').textContent=el.textContent.trim()+' - Ask me anything';
+}
+
+// ===== WEIGHT CALCULATOR =====
+const PRODUCTS=['coil','plate','pipe','round','square','hex','flat','angle'];
+function setProduct(p,el){
+  currentProduct=p;
+  document.querySelectorAll('#panel-weight .product-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  PRODUCTS.forEach(id=>{const d=document.getElementById('dims-'+id);if(d)d.style.display=id===p?'block':'none';});
+  document.getElementById('weightResult').style.display='none';
+}
+function getLengthId(){return{coil:'coil-l',plate:'plate-l',pipe:'pipe-l',round:'round-l',square:'sq-l',hex:'hex-l',flat:'flat-l',angle:'angle-l'}[currentProduct]||null;}
+function calcWeight(){
+  const STEEL=7.85;let each=0,qty=1;
+  const res=document.getElementById('weightResult');
+  if(currentProduct==='coil'||currentProduct==='plate'){
+    const pfx=currentProduct;
+    const t=Number(document.getElementById(pfx+'-t')?.value)||0;
+    const w=Number(document.getElementById(pfx+'-w')?.value)||0;
+    const l=Number(document.getElementById(pfx+'-l')?.value)||0;
+    qty=Number(document.getElementById(pfx+'-qty')?.value)||1;
+    const den=Number(document.getElementById(pfx+'-density')?.value)||STEEL;
+    const override=pfx==='coil'?Number(document.getElementById('coil-coilwt')?.value)||0:0;
+    if(!t||!w)return(res.style.display='none');
+    if(l>0)each=t*w*l/1e9*den*1000;else if(override>0)each=override;else return(res.style.display='none');
+  }else if(currentProduct==='flat'){
+    const w=Number(document.getElementById('flat-w')?.value)||0;const t=Number(document.getElementById('flat-t')?.value)||0;
+    const l=Number(document.getElementById('flat-l')?.value)||0;qty=Number(document.getElementById('flat-qty')?.value)||1;
+    if(!w||!t||!l)return(res.style.display='none');each=w*t*l/1e9*STEEL*1000;
+  }else if(currentProduct==='pipe'){
+    const od=Number(document.getElementById('pipe-od')?.value)||0;const wt=Number(document.getElementById('pipe-wt')?.value)||0;
+    const l=Number(document.getElementById('pipe-l')?.value)||0;qty=Number(document.getElementById('pipe-qty')?.value)||1;
+    const den=Number(document.getElementById('pipe-density')?.value)||STEEL;
+    if(!od||!wt||!l)return(res.style.display='none');
+    const id2=od-2*wt;each=Math.PI/4*(od*od-id2*id2)/1e6*(l/1000)*den*1000;
+  }else if(currentProduct==='round'){
+    const d=Number(document.getElementById('round-d')?.value)||0;const l=Number(document.getElementById('round-l')?.value)||0;
+    qty=Number(document.getElementById('round-qty')?.value)||1;
+    if(!d||!l)return(res.style.display='none');each=Math.PI/4*(d/1000)**2*(l/1000)*STEEL*1000;
+  }else if(currentProduct==='square'){
+    const s=Number(document.getElementById('sq-s')?.value)||0;const l=Number(document.getElementById('sq-l')?.value)||0;
+    qty=Number(document.getElementById('sq-qty')?.value)||1;
+    if(!s||!l)return(res.style.display='none');each=(s/1000)**2*(l/1000)*STEEL*1000;
+  }else if(currentProduct==='hex'){
+    const af=Number(document.getElementById('hex-af')?.value)||0;const l=Number(document.getElementById('hex-l')?.value)||0;
+    qty=Number(document.getElementById('hex-qty')?.value)||1;
+    if(!af||!l)return(res.style.display='none');each=Math.sqrt(3)/2*(af/1000)**2*(l/1000)*STEEL*1000;
+  }else if(currentProduct==='angle'){
+    const a=Number(document.getElementById('angle-a')?.value)||0;const b=Number(document.getElementById('angle-b')?.value)||0;
+    const t=Number(document.getElementById('angle-t')?.value)||0;const l=Number(document.getElementById('angle-l')?.value)||0;
+    qty=Number(document.getElementById('angle-qty')?.value)||1;
+    if(!a||!b||!t||!l)return(res.style.display='none');each=(a+b-t)*t/1e6*(l/1000)*STEEL*1000;
+  }
+  if(!each||each<=0)return(res.style.display='none');
+  const kg=each*qty,tons=kg/1000;
+  const lId=getLengthId();const lMm=lId?Number(document.getElementById(lId)?.value)||0:0;
+  const kgm=lMm>0?each/(lMm/1000):0;
+  res.innerHTML=`
+    <div class="result-item"><div class="result-item-label">Per piece</div><div class="result-item-val">${fmt(each,2)}</div><div class="result-item-unit">kg</div></div>
+    <div class="result-item"><div class="result-item-label">Total x${qty}</div><div class="result-item-val">${fmt(kg,2)}</div><div class="result-item-unit">kg</div></div>
+    <div class="result-item"><div class="result-item-label">Metric tons</div><div class="result-item-val">${fmt(tons,4)}</div><div class="result-item-unit">t</div></div>
+    ${kgm>0?`<div class="result-item"><div class="result-item-label">kg/m</div><div class="result-item-val">${fmt(kgm,3)}</div><div class="result-item-unit">kg/m</div></div>`:''}
+  `;
+  res.style.display='grid';
+}
+
+// ===== SLITTING =====
+function initSlitting(){addSlitWidth(300);addSlitWidth(250);addSlitWidth(200);}
+function addSlitWidth(val){
+  slitIdC++;const id=slitIdC;
+  const div=document.createElement('div');div.className='slit-row';div.id='sr-'+id;
+  div.innerHTML=`<input class="slit-inp" type="number" id="sw-${id}" placeholder="Width mm" value="${val||''}" oninput="runSlitting()"><label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px"><input type="number" id="sc-${id}" value="1" min="1" class="slit-inp" style="width:48px" oninput="runSlitting()"> copies</label><button class="slit-remove" onclick="removeRow(${id},'sr')">x</button>`;
+  document.getElementById('slitWidthsList').appendChild(div);
+}
+function removeRow(id,pfx){const el=document.getElementById(pfx+'-'+id);if(el)el.remove();runSlitting();}
+function runSlitting(){
+  const master=Number(document.getElementById('slit-master').value)||0;
+  const minTrim=Number(document.getElementById('slit-mintrim').value)||0;
+  const kerf=Number(document.getElementById('slit-kerf').value)||0;
+  if(!master)return(document.getElementById('slitResult').style.display='none');
+  const requested=[];
+  document.querySelectorAll('[id^="sw-"]').forEach(el=>{
+    const id=el.id.replace('sw-','');const w=Number(el.value)||0;const copies=Number(document.getElementById('sc-'+id)?.value)||1;
+    if(w>0)for(let i=0;i<copies;i++)requested.push(w);
+  });
+  if(!requested.length)return(document.getElementById('slitResult').style.display='none');
+  const usable=master-2*minTrim;
+  const plans=[];let remaining=[...requested].sort((a,b)=>b-a);
+  while(remaining.length>0){
+    let plan=[],space=usable,notFit=[];
+    for(const w of remaining){const need=plan.length===0?w:w+kerf;if(need<=space){plan.push(w);space-=need;}else notFit.push(w);}
+    if(plan.length===0){plans.push({plan:[],warn:'Cannot fit '+remaining[0]+'mm (usable: '+usable+'mm)'});break;}
+    const used=plan.reduce((s,w)=>s+w,0)+(plan.length-1)*kerf;
+    plans.push({plan,used,trim:usable-used+2*minTrim,kerf:(plan.length-1)*kerf});
+    remaining=notFit;
+  }
+  document.getElementById('slitResultBody').innerHTML=plans.map((p,i)=>`
+    <div style="margin-bottom:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <div style="padding:7px 12px;background:var(--surface2);font-size:11px;font-weight:600;color:var(--text2);display:flex;justify-content:space-between">
+        <span>Pass ${i+1} of ${plans.length}</span>
+        ${p.warn?'<span style="color:var(--amber-text)">Warning</span>':`<span style="color:${(p.trim/master)*100<5?'var(--green-text)':(p.trim/master)*100<10?'var(--amber-text)':'var(--red-text)'}">Trim: ${fmt(p.trim,1)}mm (${fmt((p.trim/master)*100,1)}%)</span>`}
+      </div>
+      ${p.warn?`<div style="padding:10px 12px;font-size:12px;color:var(--amber-text)">Warning: ${p.warn}</div>`:`
+      <div style="padding:10px 12px">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">${p.plan.map(w=>`<span style="background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:2px 10px;font-size:12px;font-family:var(--mono);font-weight:600">${w}mm</span>`).join('')}</div>
+        <div style="font-size:11px;color:var(--text3)">Strips: <strong>${p.plan.length}</strong> - Used: <strong>${fmt(p.used+p.kerf,1)}mm</strong> - Kerf total: <strong>${fmt(p.kerf,1)}mm</strong></div>
+      </div>`}
+    </div>`).join('');
+  document.getElementById('slitResult').style.display='block';
+}
+
+// ===== CUT TO LENGTH =====
+function initCTL(){addCTLRow(2000);addCTLRow(1500);}
+function addCTLRow(val){
+  ctlIdC++;const id=ctlIdC;
+  const div=document.createElement('div');div.className='slit-row';div.id='cr-'+id;
+  div.innerHTML=`<input class="slit-inp" type="number" id="cl-${id}" placeholder="Length mm" value="${val||''}" oninput="runCTL()"><label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px"><input type="number" id="cc-${id}" value="1" min="1" class="slit-inp" style="width:48px" oninput="runCTL()"> pieces</label><button class="slit-remove" onclick="removeRow(${id},'cr')">x</button>`;
+  document.getElementById('ctlLengthsList').appendChild(div);
+}
+function runCTL(){
+  const master=Number(document.getElementById('ctl-master').value)||0;
+  const kerf=Number(document.getElementById('ctl-kerf').value)||0;
+  const stock=Number(document.getElementById('ctl-stock').value)||1;
+  if(!master)return(document.getElementById('ctlResult').style.display='none');
+  const reqs=[];
+  document.querySelectorAll('[id^="cl-"]').forEach(el=>{
+    const id=el.id.replace('cl-','');const l=Number(el.value)||0;const need=Number(document.getElementById('cc-'+id)?.value)||1;
+    if(l>0&&l<=master)for(let i=0;i<need;i++)reqs.push(l);
+  });
+  if(!reqs.length)return(document.getElementById('ctlResult').style.display='none');
+  const bars=Array.from({length:stock},()=>({cuts:[],remaining:master}));
+  const sorted=[...reqs].sort((a,b)=>b-a);const notFit=[];
+  for(const len of sorted){
+    let placed=false;
+    for(const bar of bars){const need=bar.cuts.length===0?len:len+kerf;if(need<=bar.remaining){bar.cuts.push(len);bar.remaining-=need;placed=true;break;}}
+    if(!placed)notFit.push(len);
+  }
+  const used=bars.filter(b=>b.cuts.length>0);
+  const totalScrap=used.reduce((s,b)=>s+b.remaining,0);const totalMat=used.length*master;
+  document.getElementById('ctlResultBody').innerHTML=`
+    <div class="result-multi" style="margin-bottom:12px">
+      <div class="result-item"><div class="result-item-label">Bars used</div><div class="result-item-val">${used.length}</div><div class="result-item-unit">of ${stock}</div></div>
+      <div class="result-item"><div class="result-item-label">Pieces cut</div><div class="result-item-val">${reqs.length-notFit.length}</div><div class="result-item-unit">pcs</div></div>
+      <div class="result-item"><div class="result-item-label">Scrap</div><div class="result-item-val" style="color:${totalMat>0&&totalScrap/totalMat<0.05?'var(--green-text)':'var(--amber-text)'}">${fmt(totalScrap,0)}</div><div class="result-item-unit">mm</div></div>
+      <div class="result-item"><div class="result-item-label">Yield</div><div class="result-item-val">${totalMat>0?fmt((totalMat-totalScrap)/totalMat*100,1):'--'}</div><div class="result-item-unit">%</div></div>
+    </div>
+    ${used.map((b,i)=>`<div style="margin-bottom:7px;padding:8px 12px;border:1px solid var(--border);border-radius:10px"><div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:5px">Bar ${i+1} - ${fmt(b.remaining,0)}mm scrap</div><div style="display:flex;gap:4px;flex-wrap:wrap">${b.cuts.map(c=>`<span style="background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:2px 8px;font-size:11px;font-family:var(--mono)">${c}mm</span>`).join('')}</div></div>`).join('')}
+    ${notFit.length?`<div class="warn-box">Warning: ${notFit.length} cut(s) did not fit: ${notFit.join(', ')}mm. Add more stock pieces.</div>`:''}
+  `;
+  document.getElementById('ctlResult').style.display='block';
+}
+
+// ===== CONTAINER =====
+const CONT_SPECS={'20ft':{l:5898,w:2352,h:2393,maxWt:28000},'40ft':{l:12032,w:2352,h:2393,maxWt:26500},'40hc':{l:12032,w:2352,h:2698,maxWt:26500},truck:{l:13600,w:2480,h:2700,maxWt:24000},megatruck:{l:13600,w:2480,h:3000,maxWt:24000}};
+function initContSpecs(){updateContSpecs();}
+function setContType(el){
+  currentContType=el.dataset.cont;
+  document.querySelectorAll('#contTypeTabs .product-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');updateContSpecs();calcContainer();
+}
+function updateContSpecs(){
+  const c=CONT_SPECS[currentContType];
+  document.getElementById('contSpecs').textContent=`Internal: ${c.l}L x ${c.w}W x ${c.h}H mm - Max payload: ${(c.maxWt/1000).toFixed(1)} t`;
+}
+function calcContainer(){
+  const l=Number(document.getElementById('cont-l').value)||0;const w=Number(document.getElementById('cont-w').value)||0;
+  const h=Number(document.getElementById('cont-h').value)||0;const wt=Number(document.getElementById('cont-wt').value)||0;
+  const layers=Math.max(1,Number(document.getElementById('cont-layers').value)||1);
+  const res=document.getElementById('containerResult');if(!l||!w)return(res.style.display='none');
+  const c=CONT_SPECS[currentContType];
+  const pcsL=Math.floor(c.l/l);const pcsW=Math.floor(c.w/w);const pcsH=h>0?Math.floor(c.h/(h*layers)):1;
+  const byVol=pcsL*pcsW*pcsH;const byWt=wt>0?Math.floor(c.maxWt/wt):null;
+  const final=byWt?Math.min(byVol,byWt):byVol;const totalWt=wt>0?final*wt:null;
+  document.getElementById('containerResultBody').innerHTML=`
+    <div class="result-item"><div class="result-item-label">By volume</div><div class="result-item-val">${byVol}</div><div class="result-item-unit">pcs</div></div>
+    ${byWt!==null?`<div class="result-item"><div class="result-item-label">By weight</div><div class="result-item-val">${byWt}</div><div class="result-item-unit">pcs</div></div>`:''}
+    <div class="result-item" style="background:var(--accent-bg);border-color:var(--accent)"><div class="result-item-label" style="color:var(--accent)">Max load</div><div class="result-item-val" style="color:var(--accent)">${final}</div><div class="result-item-unit" style="color:var(--accent-mid)">pcs</div></div>
+    ${totalWt?`<div class="result-item"><div class="result-item-label">Total weight</div><div class="result-item-val">${fmt(totalWt/1000,2)}</div><div class="result-item-unit">t</div></div>`:''}
+    <div class="result-item"><div class="result-item-label">Layout</div><div class="result-item-val">${pcsL}x${pcsW}</div><div class="result-item-unit">LxW rows</div></div>`;
+  const warns=[];if(l>c.l)warns.push('Length '+l+'mm exceeds '+c.l+'mm');if(w>c.w)warns.push('Width '+w+'mm exceeds '+c.w+'mm');if(h&&h*layers>c.h)warns.push('Stack '+h*layers+'mm exceeds '+c.h+'mm');
+  const warnEl=document.getElementById('containerWarn');warnEl.textContent=warns.join(' - ');warnEl.style.display=warns.length?'block':'none';
+  res.style.display='block';
+}
+
+// ===== BEND ALLOWANCE =====
+function calcBend(){
+  const t=Number(document.getElementById('bend-t').value)||0;const r=Number(document.getElementById('bend-r').value)||0;
+  const angle=Number(document.getElementById('bend-angle').value)||0;const k=Number(document.getElementById('bend-k').value)||0.38;
+  const leg1=Number(document.getElementById('bend-leg1').value)||0;const leg2=Number(document.getElementById('bend-leg2').value)||0;
+  const res=document.getElementById('bendResult');if(!t||!r||!angle)return(res.style.display='none');
+  const rad=angle*Math.PI/180;const ba=rad*(r+k*t);const outside=2*(r+t)*Math.tan(rad/2);const bd=outside-ba;const blank=leg1+leg2+ba;
+  res.innerHTML=`
+    <div class="result-item"><div class="result-item-label">Bend Allowance</div><div class="result-item-val">${fmt(ba,3)}</div><div class="result-item-unit">mm</div></div>
+    <div class="result-item"><div class="result-item-label">Bend Deduction</div><div class="result-item-val">${fmt(bd,3)}</div><div class="result-item-unit">mm</div></div>
+    ${leg1&&leg2?`<div class="result-item" style="background:var(--accent-bg);border-color:var(--accent)"><div class="result-item-label" style="color:var(--accent)">Blank length</div><div class="result-item-val" style="color:var(--accent)">${fmt(blank,2)}</div><div class="result-item-unit" style="color:var(--accent-mid)">mm</div></div>`:''}
+    <div class="result-item"><div class="result-item-label">Neutral radius</div><div class="result-item-val">${fmt(r+k*t,3)}</div><div class="result-item-unit">mm</div></div>`;
+  res.style.display='grid';
+}
+
+// ===== HARDNESS =====
+const HRC_TBL=[{hrc:68,hb:940,hv:940,hrb:null,mpa:null},{hrc:65,hb:832,hv:832,hrb:null,mpa:null},{hrc:60,hb:697,hv:746,hrb:null,mpa:null},{hrc:55,hb:595,hv:627,hrb:null,mpa:null},{hrc:50,hb:513,hv:539,hrb:null,mpa:2000},{hrc:48,hb:481,hv:508,hrb:null,mpa:1900},{hrc:45,hb:421,hv:446,hrb:null,mpa:1650},{hrc:42,hb:400,hv:420,hrb:null,mpa:1550},{hrc:40,hb:371,hv:392,hrb:null,mpa:1480},{hrc:38,hb:353,hv:372,hrb:null,mpa:1410},{hrc:35,hb:327,hv:345,hrb:null,mpa:1280},{hrc:32,hb:301,hv:318,hrb:null,mpa:1150},{hrc:30,hb:286,hv:302,hrb:null,mpa:1095},{hrc:28,hb:271,hv:285,hrb:null,mpa:1020},{hrc:25,hb:253,hv:266,hrb:null,mpa:950},{hrc:22,hb:237,hv:248,hrb:null,mpa:895},{hrc:20,hb:226,hv:238,hrb:99,mpa:870},{hrc:18,hb:219,hv:230,hrb:97,mpa:840},{hrc:16,hb:212,hv:222,hrb:95,mpa:810},{hrc:14,hb:203,hv:213,hrb:93,mpa:780},{hrc:12,hb:194,hv:203,hrb:91,mpa:750},{hrc:10,hb:187,hv:196,hrb:89,mpa:720},{hrc:8,hb:179,hv:188,hrb:87,mpa:690},{hrc:5,hb:169,hv:178,hrb:83,mpa:650},{hrc:0,hb:150,hv:157,hrb:76,mpa:550}];
+function initHardnessRef(){document.getElementById('hardRefTable').innerHTML=HRC_TBL.filter((_,i)=>i%3===0).map(r=>`<tr><td style="padding:5px 10px;border-bottom:1px solid var(--border);font-family:var(--mono);font-weight:600;color:var(--text)">${r.hrc}</td><td style="padding:5px 10px;border-bottom:1px solid var(--border);font-family:var(--mono)">${r.hb}</td><td style="padding:5px 10px;border-bottom:1px solid var(--border);font-family:var(--mono)">${r.hv}</td><td style="padding:5px 10px;border-bottom:1px solid var(--border);font-family:var(--mono)">${r.mpa||'--'}</td><td style="padding:5px 10px;border-bottom:1px solid var(--border);color:var(--text3)">${r.hrc>=60?'Tool steel':r.hrc>=45?'High strength':r.hrc>=30?'Structural':r.hrc>=15?'Mild steel':'Soft steel'}</td></tr>`).join('');}
+function interp(val,fk,tk){const sorted=[...HRC_TBL].sort((a,b)=>a[fk]-b[fk]);for(let i=0;i<sorted.length-1;i++){const lo=sorted[i],hi=sorted[i+1];if(lo[fk]===null||hi[fk]===null)continue;if(val>=lo[fk]&&val<=hi[fk]){const t=(val-lo[fk])/(hi[fk]-lo[fk]);const a=lo[tk],b=hi[tk];if(a===null||b===null)return null;return a+(b-a)*t;}}return null;}
+function calcHardness(){
+  const val=Number(document.getElementById('hard-val').value);const scale=document.getElementById('hard-scale').value;
+  const res=document.getElementById('hardnessResult');const note=document.getElementById('hardnessNote');
+  if(!val)return(res.style.display='none',note.style.display='none');
+  let hrc=scale==='hrc'?val:interp(val,scale,'hrc');
+  if(hrc===null){note.textContent='Value out of range for this scale.';note.style.cssText='display:block;background:var(--amber-bg);color:var(--amber-text);border-color:var(--amber)';res.style.display='none';return;}
+  const hb=interp(hrc,'hrc','hb');const hv=interp(hrc,'hrc','hv');const hrb=hrc<=20?interp(hrc,'hrc','hrb'):null;const mpa=interp(hrc,'hrc','mpa');const ksi=mpa?mpa/6.895:null;
+  const items=[{label:'HRC',val:hrc,unit:'Rockwell C',hi:scale==='hrc'},{label:'HRB',val:hrb,unit:'Rockwell B',hi:scale==='hrb'},{label:'HB',val:hb,unit:'Brinell',hi:scale==='hb'},{label:'HV',val:hv,unit:'Vickers',hi:scale==='hv'},{label:'MPa',val:mpa,unit:'Tensile',hi:scale==='mpa'},{label:'ksi',val:ksi,unit:'Tensile ksi',hi:false}];
+  res.innerHTML=items.map(it=>`<div class="hardness-item"><div class="hardness-label">${it.label}</div><div class="hardness-val${it.hi?' hl':''}">${it.val!==null?fmt(it.val,0):'--'}</div><div style="font-size:10px;color:var(--text4);margin-top:2px">${it.unit}</div></div>`).join('');
+  res.style.display='grid';
+  const type=hrc>=60?'Tool/die steel':hrc>=45?'High-strength steel':hrc>=30?'Alloy/medium carbon':hrc>=15?'Structural/mild steel':'Soft steel';
+  note.textContent='Material class: '+type+' (HRC approx '+fmt(hrc,0)+')';note.style.cssText='display:block;background:var(--surface2);color:var(--text2);border-color:var(--border)';
+}
+
+// ===== GRADE CONVERTER =====
+async function loadGrades(){
+  const tbody=document.getElementById('gradeTblBody');
+  const{data,error}=await sb.from('grade_mappings').select('*').order('en_grade');
+  if(error){tbody.innerHTML=`<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--red-text);font-size:12px">Could not load grades. Ensure the <code style="font-family:var(--mono)">grade_mappings</code> table exists.</td></tr>`;return;}
+  allGrades=data||[];
+  document.getElementById('gradeStats').textContent=allGrades.length+' grade mapping'+(allGrades.length!==1?'s':'')+' in database';
+  renderGradeTable(allGrades);
+}
+function searchGrades(q){const c=(q||'').trim().toLowerCase();if(!c)return renderGradeTable(allGrades);renderGradeTable(allGrades.filter(g=>[g.en_grade,g.din,g.astm,g.jis,g.gb,g.erdemir,g.tosyali].some(v=>(v||'').toLowerCase().includes(c))),c);}
+function hlText(v,q){if(!q||!v)return esc(v||'--');const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');return esc(v).replace(re,'<mark style="background:var(--amber-bg);color:var(--amber-text);border-radius:2px;padding:0 2px">$1</mark>');}
+function renderGradeTable(grades,q=''){
+  const tbody=document.getElementById('gradeTblBody');
+  if(!grades.length){tbody.innerHTML=`<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text4)">No grades found</td></tr>`;return;}
+  const exact=v=>q&&(v||'').toLowerCase()===q.toLowerCase();
+  tbody.innerHTML=grades.map(g=>`<tr class="${[g.en_grade,g.din,g.astm,g.jis,g.gb,g.erdemir,g.tosyali].some(exact)?'hl':''}" ${isAdmin?`style="cursor:pointer" onclick="openGradeModal('${g.id}')"`:''}><td class="grade-cell">${hlText(g.en_grade,q)}</td><td class="grade-cell" style="color:var(--text2)">${hlText(g.din,q)}</td><td>${hlText(g.astm,q)}</td><td>${hlText(g.jis,q)}</td><td>${hlText(g.gb,q)}</td><td style="color:var(--text3)">${hlText(g.erdemir,q)}</td><td style="color:var(--text3)">${hlText(g.tosyali,q)}</td></tr>`).join('');
+}
+function openGradeModal(id){editingGradeId=id||null;const g=id?allGrades.find(x=>x.id===id):null;document.getElementById('gradeModalTitle').textContent=g?'Edit Grade Mapping':'Add Grade Mapping';document.getElementById('gradeDeleteBtn').style.display=g?'inline-flex':'none';['en','din','astm','jis','gb','erdemir','tosyali'].forEach(f=>{document.getElementById('gm-'+f).value=g?g[f==='en'?'en_grade':f]||'':'';});document.getElementById('gradeModal').style.display='flex';setTimeout(()=>document.getElementById('gm-en').focus(),100);}
+function closeGradeModal(){document.getElementById('gradeModal').style.display='none';}
+async function saveGrade(){const obj={en_grade:document.getElementById('gm-en').value.trim(),din:document.getElementById('gm-din').value.trim(),astm:document.getElementById('gm-astm').value.trim(),jis:document.getElementById('gm-jis').value.trim(),gb:document.getElementById('gm-gb').value.trim(),erdemir:document.getElementById('gm-erdemir').value.trim(),tosyali:document.getElementById('gm-tosyali').value.trim(),created_by:currentUser.id};if(!obj.en_grade){toast('EN grade is required','err');return;}let error;if(editingGradeId){({error}=await sb.from('grade_mappings').update(obj).eq('id',editingGradeId));}else{({error}=await sb.from('grade_mappings').insert(obj));}if(error){toast('Save failed: '+error.message,'err');return;}toast(editingGradeId?'Grade updated':'Grade added');closeGradeModal();loadGrades();}
+async function deleteGrade(){if(!confirm('Delete this grade mapping?'))return;const{error}=await sb.from('grade_mappings').delete().eq('id',editingGradeId);if(error){toast('Delete failed','err');return;}toast('Deleted');closeGradeModal();loadGrades();}
+
+// ===== PRICE CALCULATOR =====
+function calcPrice(){
+  const buy=Number(document.getElementById('pc-buy').value)||0;const freight=Number(document.getElementById('pc-freight').value)||0;const port=Number(document.getElementById('pc-port').value)||0;const other=Number(document.getElementById('pc-other').value)||0;
+  const mv=Number(document.getElementById('pc-margin').value)||0;const mtype=document.getElementById('pc-margin-type').value;
+  const qty=Number(document.getElementById('pc-qty').value)||1;const cur=document.getElementById('pc-cur').value;
+  const res=document.getElementById('priceResult');if(!buy)return(res.style.display='none');
+  const cost=buy+freight+port+other;const sell=mtype==='pct'?cost*(1+mv/100):cost+mv;const margin=sell-cost;const total=sell*qty;
+  res.innerHTML=`<div class="result-item"><div class="result-item-label">Total cost/t</div><div class="result-item-val">${fmt(cost,2)}</div><div class="result-item-unit">${cur}</div></div><div class="result-item" style="background:var(--accent-bg);border-color:var(--accent)"><div class="result-item-label" style="color:var(--accent)">Sell price/t</div><div class="result-item-val" style="color:var(--accent)">${fmt(sell,2)}</div><div class="result-item-unit" style="color:var(--accent-mid)">${cur}</div></div><div class="result-item" style="background:var(--green-bg);border-color:var(--green)"><div class="result-item-label" style="color:var(--green-text)">Margin/t</div><div class="result-item-val" style="color:var(--green-text)">${fmt(margin,2)}</div><div class="result-item-unit" style="color:var(--green)">${cur} (${fmt(cost>0?margin/cost*100:0,1)}%)</div></div><div class="result-item"><div class="result-item-label">Total (${qty}t)</div><div class="result-item-val">${fmt(total,0)}</div><div class="result-item-unit">${cur}</div></div><div class="result-item"><div class="result-item-label">Total margin</div><div class="result-item-val">${fmt(margin*qty,0)}</div><div class="result-item-unit">${cur}</div></div>`;
+  res.style.display='grid';
+}
+
+// ===== UNIT CONVERTER =====
+let _conv=false;
+function convertUnit(g,from,val){
+  if(_conv)return;_conv=true;const v=Number(val)||0;
+  const s=(id,n)=>{const el=document.getElementById(id);if(el&&id!==g+'-'+from)el.value=n?fmt(n,6):'';}; 
+  if(g==='len'){const mm=from==='mm'?v:from==='cm'?v*10:from==='m'?v*1000:from==='in'?v*25.4:v*304.8;s('len-mm',mm);s('len-cm',mm/10);s('len-m',mm/1000);s('len-in',mm/25.4);s('len-ft',mm/304.8);}
+  else if(g==='wt'){const kg=from==='kg'?v:from==='t'?v*1000:from==='lt'?v*1016.047:from==='st'?v*907.185:v*0.453592;s('wt-kg',kg);s('wt-t',kg/1000);s('wt-lt',kg/1016.047);s('wt-st',kg/907.185);s('wt-lb',kg/0.453592);}
+  else if(g==='temp'){const c=from==='c'?v:(v-32)*5/9;s('temp-c',c);s('temp-f',c*9/5+32);}
+  else if(g==='prs'){const mpa=from==='mpa'?v:from==='ksi'?v*6.89476:from==='nmm'?v:v*0.1;s('prs-mpa',mpa);s('prs-ksi',mpa/6.89476);s('prs-nmm',mpa);s('prs-bar',mpa*10);}
+  _conv=false;
+}
+
+// ===== INCOTERMS =====
+const INCO=[{code:'EXW',name:'Ex Works',cat:'any',seller:'Makes goods available at own premises. No export clearance.',buyer:'All costs and risks from premises to final destination including export clearance.',transfer:'At sellers named premises.',note:'Maximum obligation for buyer. Minimum for seller.'},{code:'FCA',name:'Free Carrier',cat:'any',seller:'Delivers to named carrier. Handles export clearance.',buyer:'All costs and risk from the named place.',transfer:'When handed to carrier at named place.',note:'Recommended for containerised cargo instead of FOB.'},{code:'CPT',name:'Carriage Paid To',cat:'any',seller:'Pays main freight to named destination. Handles export clearance.',buyer:'Risk transfers at first carrier. Buyer arranges insurance.',transfer:'When goods handed to first carrier.',note:'Seller pays freight but buyer bears transit risk.'},{code:'CIP',name:'Carriage & Insurance Paid',cat:'any',seller:'Pays freight AND comprehensive insurance to destination.',buyer:'Risk transfers at first carrier.',transfer:'When goods handed to first carrier.',note:'Like CPT but seller must provide full Clause A insurance.'},{code:'DAP',name:'Delivered at Place',cat:'any',seller:'Delivers to named destination ready for unloading. All transport costs.',buyer:'Import duties, taxes, and unloading.',transfer:'When goods available for unloading at named place.',note:'Common for door delivery. Seller bears all risk to destination.'},{code:'DPU',name:'Delivered at Place Unloaded',cat:'any',seller:'Delivers AND unloads at named place.',buyer:'Import duties and customs clearance.',transfer:'After unloading at named destination.',note:'Only term requiring seller to unload. Formerly DAT.'},{code:'DDP',name:'Delivered Duty Paid',cat:'any',seller:'All costs including import duties to buyers place. Maximum obligation.',buyer:'Nothing - minimum obligation.',transfer:'At named destination ready for unloading.',note:'Maximum seller obligation. Risk with seller throughout.'},{code:'FAS',name:'Free Alongside Ship',cat:'sea',seller:'Delivers goods alongside vessel at named load port.',buyer:'Loading, main freight, insurance, import.',transfer:'When goods placed alongside ship.',note:'Bulk/break-bulk only. Not suitable for containers.'},{code:'FOB',name:'Free On Board',cat:'sea',seller:'Loads goods on board vessel at named port. Handles export clearance.',buyer:'Main freight, insurance from port, import.',transfer:'When goods are on board vessel.',note:'Most common for steel exports. Risk passes when goods cross ships rail.'},{code:'CFR',name:'Cost & Freight',cat:'sea',seller:'Pays main freight to destination port. Handles export clearance.',buyer:'Insurance and risk from port of shipment.',transfer:'When goods are on board at load port.',note:'Seller pays freight but buyer bears all transit risk.'},{code:'CIF',name:'Cost Insurance & Freight',cat:'sea',seller:'Pays freight AND minimum insurance (110% value) to destination port.',buyer:'Risk from port of shipment. Import duties and inland delivery.',transfer:'When goods are on board at load port.',note:'Common for LC transactions. Seller provides minimum Clause C insurance.'}];
+function initIncoterms(){document.getElementById('incoGrid').innerHTML=INCO.map((ic,i)=>`<div class="inco-card" onclick="showIncoterm(${i})"><div class="inco-code">${ic.code}</div><div class="inco-name">${ic.name}</div><span class="inco-cat ${ic.cat}">${ic.cat==='any'?'Any mode':'Sea only'}</span></div>`).join('');}
+function showIncoterm(idx){document.querySelectorAll('.inco-card').forEach((c,i)=>c.classList.toggle('active',i===idx));const ic=INCO[idx];const det=document.getElementById('incoDetail');det.innerHTML=`<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">${ic.code} - ${ic.name}</div><div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6">${ic.note}</div><div class="inco-party-row"><div class="inco-party-label">Seller pays &amp; does</div><div style="font-size:12px;color:var(--accent);line-height:1.6">${ic.seller}</div></div><div class="inco-party-row"><div class="inco-party-label">Buyer pays &amp; does</div><div style="font-size:12px;color:var(--green-text);line-height:1.6">${ic.buyer}</div></div><div class="inco-party-row" style="border-bottom:none"><div class="inco-party-label">Risk transfer</div><div style="font-size:12px;color:var(--text2);line-height:1.6">${ic.transfer}</div></div>`;det.classList.add('open');det.scrollIntoView({behavior:'smooth',block:'nearest'});}
+
+// ===== AI DRAWER =====
+const AI_PROVIDERS={anthropic:{label:'Claude',models:[{id:'claude-sonnet-4-6',label:'Sonnet 4.6'},{id:'claude-haiku-4-5-20251001',label:'Haiku 4.5'}]},gemini:{label:'Gemini',models:[{id:'gemini-2.5-flash',label:'Gemini 2.5 Flash'},{id:'gemini-2.5-flash-lite',label:'Gemini 2.5 Lite'}]},groq:{label:'Groq',baseUrl:'https://api.groq.com/openai/v1',models:[{id:'llama-3.3-70b-versatile',label:'Llama 3.3 70B'},{id:'llama-3.1-8b-instant',label:'Llama 3.1 8B'}]},openai:{label:'OpenAI',models:[{id:'gpt-4o-mini',label:'GPT-4o Mini'},{id:'gpt-4o',label:'GPT-4o'}]},mistral:{label:'Mistral',baseUrl:'https://api.mistral.ai/v1',models:[{id:'mistral-small-latest',label:'Mistral Small'}]},custom:{label:'Custom',hasUrl:true,hasModel:true,models:[]}};
+let aiSt={provider:'groq',model:'llama-3.3-70b-versatile',keys:{},keyActive:{},customUrl:'',customModel:''};
+let aiMsgs=[],aiBusy=false;
+function aiLoad(){try{const s=JSON.parse(localStorage.getItem('sd_ai')||'{}');if(s.provider&&AI_PROVIDERS[s.provider])aiSt.provider=s.provider;if(s.model)aiSt.model=s.model;if(s.keys)aiSt.keys=s.keys;if(s.keyActive)aiSt.keyActive=s.keyActive;if(s.customUrl)aiSt.customUrl=s.customUrl;if(s.customModel)aiSt.customModel=s.customModel;}catch(e){}const old=localStorage.getItem('sp_claude_key');if(old&&!aiSt.keys.anthropic){aiSt.keys.anthropic=old;aiSt.keyActive.anthropic=true;}}
+function aiKey(){const k=aiSt.keys[aiSt.provider]||'';return(!k||aiSt.keyActive[aiSt.provider]===false)?'':k;}
+function openAI(){document.getElementById('aiDrawer').classList.add('open');document.getElementById('aiOverlay').classList.add('open');setTimeout(()=>document.getElementById('aiInput').focus(),300);}
+function closeAI(){document.getElementById('aiDrawer').classList.remove('open');document.getElementById('aiOverlay').classList.remove('open');}
+document.getElementById('aiBtn').addEventListener('click',openAI);
+document.getElementById('aiOverlay').addEventListener('click',closeAI);
+async function aiCall(sys,msgs,onChunk){
+  const key=aiKey();if(!key)throw new Error('No API key - go to Settings to configure');
+  const p=AI_PROVIDERS[aiSt.provider],model=aiSt.model;let full='';
+  if(aiSt.provider==='anthropic'){const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:2000,system:sys,messages,stream:true})});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e?.error?.message||'HTTP '+r.status);}const rd=r.body.getReader();const dc=new TextDecoder();while(true){const{done,value}=await rd.read();if(done)break;for(const line of dc.decode(value,{stream:true}).split('\n')){if(!line.startsWith('data:'))continue;const d=line.slice(5).trim();if(d==='[DONE]')break;try{const j=JSON.parse(d);if(j.type==='content_block_delta'&&j.delta?.type==='text_delta'){full+=j.delta.text;onChunk(full);}}catch(e){}}}}
+  else if(aiSt.provider==='gemini'){const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${key}&alt=sse`;const contents=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents,generationConfig:{maxOutputTokens:2000}})});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e?.error?.message||'HTTP '+r.status);}const rd=r.body.getReader();const dc=new TextDecoder();let buf='';while(true){const{done,value}=await rd.read();if(done)break;buf+=dc.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop()||'';for(const line of lines){if(!line.startsWith('data:'))continue;const d=line.slice(5).trim();if(!d)continue;try{const j=JSON.parse(d);const txt=j.candidates?.[0]?.content?.parts?.[0]?.text||'';if(txt){full+=txt;onChunk(full);}}catch(e){}}}}
+  else{const base=p?.baseUrl||aiSt.customUrl||'https://api.openai.com/v1',useModel=p?.hasModel?aiSt.customModel:model;const r=await fetch(`${base}/chat/completions`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:useModel,max_tokens:2000,stream:true,messages:[{role:'system',content:sys},...msgs]})});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e?.error?.message||'HTTP '+r.status);}const rd=r.body.getReader();const dc=new TextDecoder();while(true){const{done,value}=await rd.read();if(done)break;for(const line of dc.decode(value,{stream:true}).split('\n')){if(!line.startsWith('data:'))continue;const d=line.slice(5).trim();if(d==='[DONE]')break;try{const j=JSON.parse(d);const txt=j.choices?.[0]?.delta?.content||'';if(txt){full+=txt;onChunk(full);}}catch(e){}}}}
+  return full;
+}
+function aiMsg(role,text,typing=false){const body=document.getElementById('aiBody');const wrap=document.createElement('div');wrap.className='ai-msg-w'+(role==='user'?' user':'');const div=document.createElement('div');div.className='ai-msg '+role;if(typing)div.innerHTML='<div class="ai-dots"><span></span><span></span><span></span></div>';else div.innerHTML=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');wrap.appendChild(div);body.appendChild(wrap);wrap.scrollIntoView({behavior:'smooth',block:'end'});return div;}
+async function aiSend(){if(aiBusy)return;const key=aiKey();if(!key){toast('No API key - configure in Settings','err');return;}const inp=document.getElementById('aiInput');const text=(inp.value||'').trim();if(!text)return;inp.value='';document.getElementById('aiSendBtn').disabled=true;aiBusy=true;aiMsg('user',text);aiMsgs.push({role:'user',content:text});const typing=aiMsg('ai','',true);let removed=false;const sys='You are a steel trade assistant on the SteelDesk Tools page. Help with: weight calculations, grade conversions EN/DIN<->ASTM<->JIS<->GB (show as tables), Incoterms, price calculations, hardness conversions. Be concise and practical. Answer in the same language the user writes in.';try{const bubble=document.createElement('div');bubble.className='ai-msg ai';const wrap=document.createElement('div');wrap.className='ai-msg-w';wrap.style.display='none';wrap.appendChild(bubble);document.getElementById('aiBody').appendChild(wrap);const full=await aiCall(sys,aiMsgs,(t)=>{if(!removed){typing.parentElement?.remove();wrap.style.display='';removed=true;}bubble.innerHTML=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');bubble.scrollIntoView({behavior:'smooth',block:'end'});});aiMsgs.push({role:'assistant',content:full});}catch(e){if(!removed)typing.parentElement?.remove();aiMsg('ai','Error: '+e.message);}aiBusy=false;document.getElementById('aiSendBtn').disabled=false;document.getElementById('aiInput').focus();}
+function aiQuick(text){openAI();document.getElementById('aiInput').value=text;aiSend();}
+
+aiLoad();
+
+</script>
+</body>
+</html>

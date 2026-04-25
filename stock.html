@@ -1845,6 +1845,7 @@ function copySQLSetup(){
   });
 }
 
+function countryFlag(origin){if(!origin)return'';const o=origin.toLowerCase();const flags={turkey:'🇹🇷',türkiye:'🇹🇷',ukraine:'🇺🇦',ukrayna:'🇺🇦',china:'🇨🇳',çin:'🇨🇳',germany:'🇩🇪',almanya:'🇩🇪',russia:'🇷🇺',rusya:'🇷🇺',spain:'🇪🇸',ispanya:'🇪🇸',italy:'🇮🇹',italya:'🇮🇹',france:'🇫🇷',fransa:'🇫🇷',india:'🇮🇳',hindistan:'🇮🇳',japan:'🇯🇵',japonya:'🇯🇵','south korea':'🇰🇷','güney kore':'🇰🇷',brazil:'🇧🇷',brezilya:'🇧🇷',usa:'🇺🇸','united states':'🇺🇸',uk:'🇬🇧','united kingdom':'🇬🇧',poland:'🇵🇱',polonya:'🇵🇱',romania:'🇷🇴',romanya:'🇷🇴',czech:'🇨🇿',sweden:'🇸🇪',netherlands:'🇳🇱',hollanda:'🇳🇱',belgium:'🇧🇪',austria:'🇦🇹',slovakia:'🇸🇰',hungary:'🇭🇺'};for(const[k,v]of Object.entries(flags)){if(o.includes(k))return v;}return'';}
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtNum(n){ const v=Number(n)||0; return v>=1000?v.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}):v.toFixed(2); }
 function fmtShort(n){ const v=Number(n)||0; if(!v)return'—'; return v>=1000?v.toLocaleString('en-US',{maximumFractionDigits:0}):v.toFixed(2); }
