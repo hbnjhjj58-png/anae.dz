@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SteelDesk — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   STEELDESK v1.0 — Design System
+   Theme: Steel · Accent: #185FA5
+═══════════════════════════════════════════ */
+:root{
+  --bg:#EEF1F5;--bg2:#E4E8EE;
+  --surface:#F8F9FB;--surface2:#ECEEF2;--surface3:#E2E5EA;
+  --border:#D6DAE1;--border2:#C4C9D2;
+  --text:#1B2232;--text2:#4A5568;--text3:#8896A8;--text4:#B8C2CC;
+  --accent:#185FA5;--accent-bg:#E3EDF8;--accent-mid:#4A8AC4;--accent-dark:#0E4178;
+  --green:#0E8A5F;--green-bg:#E0F5EC;--green-text:#0B6B49;
+  --amber:#C47D00;--amber-bg:#FDF3DC;--amber-text:#7A4D00;
+  --red:#CC3333;--red-bg:#FDEAEA;--red-text:#921F1F;
+  --purple:#6B5ED4;--purple-bg:#EEECFB;--purple-text:#4A3EAA;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:18px;
+  --shadow:0 1px 4px rgba(24,40,72,.08),0 1px 2px rgba(24,40,72,.04);
+  --sb-w:230px;
+}
+[data-theme="dark"]{
+  --bg:#0F1117;--bg2:#090B0F;
+  --surface:#181C24;--surface2:#1E2330;--surface3:#252B38;
+  --border:#2A3040;--border2:#353D50;
+  --text:#E8ECF2;--text2:#98A6B8;--text3:#58687A;--text4:#38455A;
+  --accent:#4A8AC4;--accent-bg:#0E1F38;--accent-mid:#185FA5;--accent-dark:#6AAEE0;
+  --green:#1DAE7A;--green-bg:#082A1C;--green-text:#3DD4A0;
+  --amber:#F0A820;--amber-bg:#281A02;--amber-text:#F8CC66;
+  --red:#E04848;--red-bg:#280C0C;--red-text:#EE8888;
+  --purple:#9B8EE8;--purple-bg:#1A1640;--purple-text:#BAB2F6;
+  --shadow:0 1px 4px rgba(0,0,0,.3);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* ── Auth ── */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:36px;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.1)}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.auth-logo-mark{width:34px;height:34px;background:var(--accent);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.auth-logo-mark svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2}
+.auth-logo-name{font-size:17px;font-weight:600;color:var(--text);letter-spacing:-.3px}
+.auth-logo-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.auth-title{font-size:18px;font-weight:600;margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--text3);margin-bottom:22px}
+.lbl{font-size:11px;font-weight:600;color:var(--text3);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.inp{width:100%;height:40px;border:1px solid var(--border);border-radius:var(--r-sm);padding:0 12px;font-size:13px;font-family:var(--sans);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.inp::placeholder{color:var(--text4)}
+.form-row{margin-bottom:13px}
+.auth-btn{width:100%;height:42px;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;margin-top:4px;transition:opacity .15s}
+.auth-btn:hover{opacity:.88}.auth-btn:disabled{opacity:.45;cursor:not-allowed}
+.auth-msg{font-size:12px;margin-top:12px;padding:10px 12px;border-radius:var(--r-sm);text-align:center;background:var(--red-bg);color:var(--red-text);display:none}
+
+/* ── App shell ── */
+#app{display:none;height:100vh;overflow:hidden}
+.layout{display:flex;height:100%}
+
+/* ── Sidebar ── */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(10,14,24,.5);z-index:190;backdrop-filter:blur(2px)}
+.sb-overlay.open{display:block}
+.sidebar{width:var(--sb-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.sidebar.open{transform:translateX(0)}
+.sb-logo{padding:18px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-logo-mark{width:30px;height:30px;background:var(--accent);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-mark svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
+.sb-logo-name{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.3px}
+.sb-logo-sub{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.sb-nav{flex:1;overflow-y:auto;padding:8px 0}
+.sb-nav::-webkit-scrollbar{width:4px}.sb-nav::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.sb-sec{font-size:9px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.8px;padding:12px 18px 4px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:13px;font-weight:400;color:var(--text2);text-decoration:none;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:var(--sans);transition:background .12s,color .12s;position:relative}
+.sb-item:hover{background:var(--surface2);color:var(--text)}
+.sb-item.active{background:var(--accent-bg);color:var(--accent);font-weight:500}
+.sb-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:var(--accent);border-radius:0 3px 3px 0}
+.sb-icon{width:16px;height:16px;flex-shrink:0;opacity:.6}
+.sb-item.active .sb-icon,.sb-item:hover .sb-icon{opacity:1}
+.sb-badge{margin-left:auto;font-size:10px;font-weight:600;background:var(--red);color:#fff;border-radius:20px;padding:1px 6px;min-width:16px;text-align:center}
+.sb-badge.am{background:var(--amber)}
+.sb-footer{padding:12px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+.sb-user-row{display:flex;align-items:center;gap:8px;padding:4px}
+.sb-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-user-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-user-role{font-size:10px;color:var(--text3)}
+.admin-badge{font-size:9px;font-weight:700;background:var(--amber-bg);color:var(--amber-text);padding:2px 7px;border-radius:20px;border:1px solid var(--amber);display:inline-block}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ── Topbar ── */
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 16px;flex-shrink:0;position:relative;z-index:100}
+.tb-menu{width:34px;height:34px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s}
+.tb-menu:hover{background:var(--surface3)}
+.tb-title{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.2px}
+.tb-spacer{flex:1}
+.tb-right{display:flex;align-items:center;gap:8px}
+.tb-ts{font-size:11px;color:var(--text4);font-family:var(--mono)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:32px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans);background:var(--surface);color:var(--text2);white-space:nowrap;transition:all .12s;text-decoration:none}
+.btn:hover{background:var(--surface2);color:var(--text)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-primary:hover{opacity:.88;background:var(--accent)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--text3)}.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-sm{height:28px;padding:0 10px;font-size:11px}
+
+/* AI button */
+.ai-btn{width:34px;height:34px;background:var(--accent);border:none;border-radius:var(--r-sm);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;transition:background .12s}
+.ai-btn:hover{background:var(--accent-dark)}
+.ai-dot{position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:var(--green);border-radius:50%;border:2px solid var(--surface)}
+
+/* ── Page content ── */
+.page-scroll{flex:1;overflow-y:auto;padding:18px}
+.page-scroll::-webkit-scrollbar{width:5px}.page-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.page-body{max-width:1300px;margin:0 auto}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:15px 16px;box-shadow:var(--shadow);transition:border-color .15s}
+.kpi:hover{border-color:var(--accent-mid)}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.kpi-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.kpi-icon{font-size:16px;opacity:.8}
+.kpi-value{font-size:24px;font-weight:600;color:var(--text);letter-spacing:-.5px;line-height:1;margin-bottom:4px;font-family:var(--mono)}
+.kpi-sub{font-size:11px;color:var(--text3)}
+.kpi-bar{height:3px;border-radius:3px;margin-top:10px}
+.kpi-bar.accent{background:var(--accent)}
+.kpi-bar.green{background:var(--green)}
+.kpi-bar.amber{background:var(--amber)}
+.kpi-bar.red{background:var(--red)}
+
+/* ── Quick actions ── */
+.qa-row{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.qa-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans);background:var(--surface);color:var(--text2);text-decoration:none;transition:all .12s}
+.qa-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.qa-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.qa-btn.primary:hover{opacity:.9}
+
+/* ── Dash grid ── */
+.dash-grid{display:grid;grid-template-columns:1fr 300px;gap:14px}
+@media(max-width:1000px){.dash-grid{grid-template-columns:1fr}}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow)}
+.card-hd{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border)}
+.card-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.card-hd-right{display:flex;align-items:center;gap:6px}
+
+/* ── Charts ── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;box-shadow:var(--shadow)}
+.chart-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.chart-wrap{position:relative;height:160px}
+
+/* ── Alerts ── */
+.alerts-col{display:flex;flex-direction:column;gap:12px}
+.alert-group{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow)}
+.alert-gd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)}
+.alert-gl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.alert-cnt{font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;background:var(--red);color:#fff}
+.alert-cnt.am{background:var(--amber)}
+.alert-cnt.bl{background:var(--accent)}
+.alert-item{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;text-decoration:none;transition:background .12s}
+.alert-item:last-child{border-bottom:none}
+.alert-item:hover{background:var(--surface2)}
+.alert-ic{font-size:14px;flex-shrink:0;margin-top:1px}
+.alert-tx{font-size:12px;font-weight:500;color:var(--text);line-height:1.3}
+.alert-sx{font-size:10px;color:var(--text3);margin-top:2px}
+.alert-empty{padding:14px;text-align:center;font-size:11px;color:var(--text4)}
+
+/* ── Feed ── */
+.feed-body{padding:0}
+.feed-item{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);transition:background .12s}
+.feed-item:last-child{border-bottom:none}
+.feed-item:hover{background:var(--surface2)}
+.feed-ic{font-size:14px;flex-shrink:0;margin-top:2px}
+.feed-tx{font-size:12px;font-weight:500;color:var(--text);line-height:1.3}
+.feed-meta{font-size:10px;color:var(--text3);margin-top:2px;display:flex;gap:10px}
+
+/* ── Market prices ── */
+.price-row{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid var(--border)}
+.price-row:last-child{border-bottom:none}
+.price-label{font-size:12px;color:var(--text2)}
+.price-val{font-size:13px;font-weight:600;color:var(--text);font-family:var(--mono)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:var(--surface);font-size:12px;font-weight:500;padding:10px 16px;border-radius:var(--r-md);z-index:999;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── Spinner ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+
+/* ═══════════════════════════════
+   AI DRAWER — bottom slide-up
+═══════════════════════════════ */
+.ai-overlay{display:none;position:fixed;inset:0;background:rgba(10,14,24,.4);z-index:400;backdrop-filter:blur(2px)}
+.ai-overlay.open{display:block}
+.ai-drawer{position:fixed;bottom:0;left:0;right:0;z-index:401;background:var(--surface);border-top:1px solid var(--border);border-radius:var(--r-xl) var(--r-xl) 0 0;height:68vh;max-height:560px;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:0 -8px 32px rgba(0,0,0,.12)}
+.ai-drawer.open{transform:translateY(0)}
+@media(min-width:768px){.ai-drawer{max-width:540px;left:50%;right:auto;transform:translateX(-50%) translateY(100%)}.ai-drawer.open{transform:translateX(-50%) translateY(0)}}
+.ai-handle{width:36px;height:4px;background:var(--border2);border-radius:4px;margin:10px auto 0}
+.ai-hdr{padding:12px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ai-hdr-left{display:flex;align-items:center;gap:10px}
+.ai-logo-mark{width:26px;height:26px;background:var(--accent);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-logo-mark svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2}
+.ai-hdr-title{font-size:13px;font-weight:600;color:var(--text)}
+.ai-hdr-ctx{font-size:10px;color:var(--text3);margin-top:1px}
+.ai-settings-btn{display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface2);color:var(--text2);cursor:pointer;font-size:11px;font-family:var(--sans);transition:background .12s}
+.ai-settings-btn:hover{background:var(--surface3)}
+.ai-close{width:28px;height:28px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s}
+.ai-close:hover{background:var(--surface3)}
+/* Quick prompts */
+.ai-quick{display:flex;gap:5px;padding:8px 14px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+.ai-qp{height:24px;padding:0 10px;border:1px solid var(--border);border-radius:20px;font-size:11px;background:var(--surface);color:var(--text2);cursor:pointer;font-family:var(--sans);white-space:nowrap;transition:all .12s}
+.ai-qp:hover{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
+/* Chat */
+.ai-body{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.ai-body::-webkit-scrollbar{width:4px}.ai-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.ai-msg-wrap{display:flex;flex-direction:column}
+.ai-msg-wrap.user{align-items:flex-end}
+.ai-msg{font-size:13px;line-height:1.6;padding:9px 12px;border-radius:var(--r-md);max-width:90%;word-break:break-word}
+.ai-msg.user{background:var(--accent);color:#fff;border-radius:var(--r-md) var(--r-md) 2px var(--r-md)}
+.ai-msg.ai{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:2px var(--r-md) var(--r-md) var(--r-md)}
+.ai-msg strong{font-weight:600}
+/* Typing dots */
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.ai-dots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--text4);margin-right:3px;animation:bounce .9s infinite}
+.ai-dots span:nth-child(2){animation-delay:.15s}
+.ai-dots span:nth-child(3){animation-delay:.3s}
+/* Input */
+.ai-input-row{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px}
+.ai-input{flex:1;height:36px;border:1px solid var(--border);border-radius:var(--r-sm);padding:0 12px;font-size:13px;background:var(--surface);color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s}
+.ai-input:focus{border-color:var(--accent)}
+.ai-send{width:36px;height:36px;background:var(--accent);border:none;border-radius:var(--r-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s}
+.ai-send:hover{background:var(--accent-dark)}
+.ai-send:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── AI Settings panel inside drawer ── */
+.ai-settings-panel{display:none;border-bottom:1px solid var(--border);padding:12px 14px;background:var(--bg);flex-direction:column;gap:8px}
+.ai-settings-panel.open{display:flex}
+.ai-sp-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ai-sp-sel{height:32px;border:1px solid var(--border);border-radius:var(--r-sm);padding:0 10px;font-size:12px;background:var(--surface);color:var(--text);font-family:var(--sans);outline:none;width:100%;cursor:pointer}
+.ai-sp-sel:focus{border-color:var(--accent)}
+.ai-key-row{display:flex;gap:6px}
+.ai-key-inp{flex:1;height:32px;border:1px solid var(--border);border-radius:var(--r-sm);padding:0 10px;font-size:12px;font-family:var(--mono);background:var(--surface);color:var(--text);outline:none}
+.ai-key-inp:focus{border-color:var(--accent)}
+.ai-key-save{height:32px;padding:0 12px;border:none;border-radius:var(--r-sm);font-size:12px;font-weight:600;background:var(--accent);color:#fff;cursor:pointer;font-family:var(--sans)}
+.ai-key-status{font-size:10px;color:var(--text3);margin-top:2px}
+.ai-key-status.ok{color:var(--green-text)}
+
+/* Responsive */
+@media(max-width:768px){
+  .tb-ts{display:none}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .dash-grid{grid-template-columns:1fr}
+  .charts-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ════ AUTH ════ -->
+<div class="auth-wrap" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </div>
+      <div>
+        <div class="auth-logo-name">SteelDesk</div>
+        <div class="auth-logo-sub">Trade OS</div>
+      </div>
+    </div>
+    <div class="auth-title">Welcome back</div>
+    <div class="auth-sub">Sign in to your workspace</div>
+    <div class="form-row"><label class="lbl">Email</label><input class="inp" type="email" id="loginEmail" placeholder="you@company.com" autocomplete="email"></div>
+    <div class="form-row"><label class="lbl">Password</label><input class="inp" type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="auth-btn" id="loginBtn">Sign in</button>
+    <div class="auth-msg" id="authMsg"></div>
+  </div>
+</div>
+
+<!-- ════ APP ════ -->
+<div id="app">
+  <div class="layout">
+
+    <!-- Sidebar overlay -->
+    <div class="sb-overlay" id="sbOverlay"></div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+      <div class="sb-logo">
+        <div class="sb-logo-mark">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </div>
+        <div>
+          <div class="sb-logo-name">SteelDesk</div>
+          <div class="sb-logo-sub">Trade OS</div>
+        </div>
+      </div>
+
+      <div class="sb-nav">
+        <div class="sb-sec">Overview</div>
+        <a class="sb-item active" href="dashboard.html">
+          <svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="12" y="2" width="6" height="6" rx="1"/><rect x="2" y="12" width="6" height="6" rx="1"/><rect x="12" y="12" width="6" height="6" rx="1"/></svg>
+          Dashboard
+        </a>
+        <div class="sb-sec">Trade</div>
+        <a class="sb-item" href="deals.html">
+          <svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h14M3 10h10M3 15h6"/><circle cx="16" cy="14" r="3"/><path d="M16 13v1.5l1 .5"/></svg>
+          Deals
+        </a>
+        <a class="sb-item" href="stock.html">
+          <svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2L2 6v8l8 4 8-4V6l-8-4z"/><path d="M2 6l8 4 8-4M10 10v8"/></svg>
+          Stock
+        </a>
+        <a class="sb-item" href="offers.html">
+          <svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h12a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/><path d="M7 8h6M7 12h4"/></svg>
+          Offers
+        </a>
+        <a class="sb-item" href="logistics.html">
+          <svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12h12l2-6H4L2 12z"/><circle cx="6" cy="16" r="1.5"/><circle cx="14" cy="16" r="1.5"/><path d="M2 12V6"/></svg>
+          Logistics
+        </a>
+        <div class="sb-sec">Business</div>
+        <a class="sb-item" href="finance.html">
+          <svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2v16M6 6h6a2 2 0 010 4H8a2 2 0 010 4h7"/></svg>
+          Finance
+        </a>
+        <a class="sb-item" href="documents.html">
+          <svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h10a1 1 0 011 1v13l-3-2-3 2-3-2-3 2V4a1 1 0 011-1z"/></svg>
+          Documents
+        </a>
+        <div class="sb-sec">Tools</div>
+        <a class="sb-item" href="tools.html">
+          <svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.5 2.5a3 3 0 00-3 3c0 .4.1.8.2 1.1L3.5 14.8a1 1 0 000 1.4l.3.3a1 1 0 001.4 0l8.2-8.2c.3.1.7.2 1.1.2a3 3 0 100-6z"/></svg>
+          Tools
+        </a>
+        <a class="sb-item" href="settings.html">
+          <svg class="sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"/></svg>
+          Settings
+        </a>
+      </div>
+
+      <div class="sb-footer">
+        <div id="adminBadgeWrap" style="display:none"><span class="admin-badge">Admin</span></div>
+        <div class="sb-user-row">
+          <div class="sb-avatar" id="sbAvatar">—</div>
+          <div style="min-width:0">
+            <div class="sb-user-name" id="userEmail">—</div>
+            <div class="sb-user-role" id="userRole">Member</div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="darkBtn" style="width:100%;justify-content:flex-start;gap:6px">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 14A7 7 0 117 3a7 7 0 0010 11z"/></svg>
+          Dark mode
+        </button>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn" style="width:100%;justify-content:flex-start;gap:6px;color:var(--red-text)">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 3h4a1 1 0 011 1v12a1 1 0 01-1 1h-4M8 7l-3 3 3 3M14 10H5"/></svg>
+          Sign out
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <div class="main" id="mainWrap">
+      <!-- Topbar -->
+      <header class="topbar">
+        <button class="tb-menu" id="menuBtn">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h14M3 10h14M3 15h14"/></svg>
+        </button>
+        <span class="tb-title">Dashboard</span>
+        <div class="tb-spacer"></div>
+        <div class="tb-right">
+          <span class="tb-ts" id="refreshTs"></span>
+          <button class="btn btn-sm" id="refreshBtn">↻ Refresh</button>
+          <button class="ai-btn" id="aiBtn" title="AI Assistant">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="8"/><path d="M7 9.5c0-1.1.9-2 2-2h2a2 2 0 012 2v.3a2 2 0 01-2 2H10l-1 2"/><circle cx="10" cy="15.5" r=".7" fill="currentColor" stroke="none"/></svg>
+            <div class="ai-dot"></div>
+          </button>
+        </div>
+      </header>
+
+      <!-- Page content -->
+      <div class="page-scroll">
+        <div class="page-body">
+
+          <!-- Quick actions -->
+          <div class="qa-row">
+            <a class="qa-btn primary" href="deals.html">
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 4v12M4 10h12"/></svg>
+              New Deal
+            </a>
+            <a class="qa-btn" href="offers.html">
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h12a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/><path d="M7 8h6M7 12h4"/></svg>
+              Build Offer
+            </a>
+            <a class="qa-btn" href="stock.html">
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2L2 6v8l8 4 8-4V6l-8-4z"/></svg>
+              View Stock
+            </a>
+            <a class="qa-btn" href="logistics.html">
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12h12l2-6H4L2 12z"/><circle cx="6" cy="16" r="1.5"/><circle cx="14" cy="16" r="1.5"/></svg>
+              Add Shipment
+            </a>
+            <a class="qa-btn" href="finance.html">
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h12v3H4z"/><path d="M4 10h12v7H4z"/></svg>
+              New Invoice
+            </a>
+          </div>
+
+          <!-- KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi">
+              <div class="kpi-top"><span class="kpi-label">Pipeline</span><span class="kpi-icon">📊</span></div>
+              <div class="kpi-value" id="kpi-pipeline">—</div>
+              <div class="kpi-sub" id="kpi-pipeline-sub">open deals</div>
+              <div class="kpi-bar accent"></div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top"><span class="kpi-label">Won this month</span><span class="kpi-icon">🏆</span></div>
+              <div class="kpi-value" id="kpi-won" style="color:var(--green)">—</div>
+              <div class="kpi-sub" id="kpi-won-sub">deals closed</div>
+              <div class="kpi-bar green"></div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top"><span class="kpi-label">Stock value</span><span class="kpi-icon">📦</span></div>
+              <div class="kpi-value" id="kpi-stock">—</div>
+              <div class="kpi-sub" id="kpi-stock-sub">items</div>
+              <div class="kpi-bar accent"></div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top"><span class="kpi-label">Open invoices</span><span class="kpi-icon">🧾</span></div>
+              <div class="kpi-value" id="kpi-ar" style="color:var(--amber)">—</div>
+              <div class="kpi-sub" id="kpi-ar-sub">unpaid</div>
+              <div class="kpi-bar amber"></div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top"><span class="kpi-label">Shipments</span><span class="kpi-icon">🚢</span></div>
+              <div class="kpi-value" id="kpi-ships">—</div>
+              <div class="kpi-sub" id="kpi-ships-sub">active</div>
+              <div class="kpi-bar accent"></div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top"><span class="kpi-label">Open POs</span><span class="kpi-icon">🛒</span></div>
+              <div class="kpi-value" id="kpi-pos">—</div>
+              <div class="kpi-sub" id="kpi-pos-sub">committed</div>
+              <div class="kpi-bar amber"></div>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="charts-row">
+            <div class="chart-card">
+              <div class="chart-title">Won revenue — last 6 months</div>
+              <div class="chart-wrap"><canvas id="wonChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">Pipeline by stage</div>
+              <div class="chart-wrap"><canvas id="stageChart"></canvas></div>
+            </div>
+          </div>
+          <div class="chart-card" style="margin-bottom:14px">
+            <div class="chart-title">Revenue vs collected — last 6 months</div>
+            <div style="position:relative;height:160px"><canvas id="plChart"></canvas></div>
+          </div>
+
+          <!-- Dash grid -->
+          <div class="dash-grid">
+            <!-- Left: activity feed -->
+            <div class="card">
+              <div class="card-hd">
+                <span class="card-title">Activity feed</span>
+              </div>
+              <div class="feed-body" id="feedList">
+                <div style="padding:20px;text-align:center;color:var(--text4)"><span class="spinner"></span></div>
+              </div>
+            </div>
+
+            <!-- Right: alerts + prices -->
+            <div class="alerts-col">
+              <!-- Overdue invoices -->
+              <div class="alert-group">
+                <div class="alert-gd">
+                  <span class="alert-gl">Overdue invoices</span>
+                  <span class="alert-cnt" id="cnt-inv">0</span>
+                </div>
+                <div id="alerts-inv"><div class="alert-empty">No overdue invoices ✓</div></div>
+              </div>
+              <!-- POs due -->
+              <div class="alert-group">
+                <div class="alert-gd">
+                  <span class="alert-gl">POs due this week</span>
+                  <span class="alert-cnt am" id="cnt-po">0</span>
+                </div>
+                <div id="alerts-po"><div class="alert-empty">No POs due this week ✓</div></div>
+              </div>
+              <!-- Overdue deals -->
+              <div class="alert-group">
+                <div class="alert-gd">
+                  <span class="alert-gl">Overdue deals</span>
+                  <span class="alert-cnt am" id="cnt-leads">0</span>
+                </div>
+                <div id="alerts-leads"><div class="alert-empty">No overdue deals ✓</div></div>
+              </div>
+              <!-- Low stock -->
+              <div class="alert-group">
+                <div class="alert-gd">
+                  <span class="alert-gl">Low stock</span>
+                  <span class="alert-cnt bl" id="cnt-stock">0</span>
+                </div>
+                <div id="alerts-stock"><div class="alert-empty">No low stock alerts ✓</div></div>
+              </div>
+              <!-- Market prices -->
+              <div class="card">
+                <div class="card-hd">
+                  <span class="card-title">Market prices</span>
+                  <button class="btn btn-ghost btn-sm" onclick="openPriceEdit()">✏ Edit</button>
+                </div>
+                <div id="pricesBody">
+                  <div class="price-row"><span class="price-label">HRC Turkey FOB</span><span class="price-val" id="p-hrc">—</span></div>
+                  <div class="price-row"><span class="price-label">Rebar Turkey FOB</span><span class="price-val" id="p-rebar">—</span></div>
+                  <div class="price-row"><span class="price-label">Scrap HMS 1&2 CFR</span><span class="price-val" id="p-scrap">—</span></div>
+                  <div class="price-row"><span class="price-label">Iron Ore 62% CFR</span><span class="price-val" id="p-ore">—</span></div>
+                  <div class="price-row"><span class="price-label">EUR / USD</span><span class="price-val" id="p-eurusd">—</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ AI DRAWER ════ -->
+<div class="ai-overlay" id="aiOverlay"></div>
+<div class="ai-drawer" id="aiDrawer">
+  <div class="ai-handle"></div>
+  <div class="ai-hdr">
+    <div class="ai-hdr-left">
+      <div class="ai-logo-mark">
+        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" fill="none"/><path d="M7 9.5c0-1.1.9-2 2-2h2a2 2 0 012 2v.3a2 2 0 01-2 2H10l-1 2" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="10" cy="15.5" r=".7" fill="currentColor"/></svg>
+      </div>
+      <div>
+        <div class="ai-hdr-title">AI Assistant</div>
+        <div class="ai-hdr-ctx" id="aiCtx">Dashboard · loading…</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="ai-settings-btn" onclick="toggleAISettings()">
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2"/></svg>
+        <span id="aiProviderLabel">Settings</span>
+      </button>
+      <button class="ai-close" onclick="closeAI()">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l10 10M15 5L5 15"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings panel -->
+  <div class="ai-settings-panel" id="aiSettingsPanel">
+    <div class="ai-sp-row">
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Provider</div>
+        <select class="ai-sp-sel" id="aiProviderSel" onchange="aiSelectProvider(this.value)"></select>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Model</div>
+        <select class="ai-sp-sel" id="aiModelSel" onchange="aiSaveModelPref()"></select>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.4px" id="aiKeyLbl">API Key</div>
+      <div class="ai-key-row">
+        <input class="ai-key-inp" type="password" id="aiKeyInp" placeholder="Paste key here…" autocomplete="off">
+        <button class="ai-key-save" onclick="aiSaveKey()">Save</button>
+      </div>
+      <div class="ai-key-status" id="aiKeyStatus">No key saved</div>
+    </div>
+  </div>
+
+  <!-- Quick prompts -->
+  <div class="ai-quick">
+    <button class="ai-qp" onclick="aiQuick('Summarise my pipeline: what are the most valuable deals and which need attention?')">Pipeline summary</button>
+    <button class="ai-qp" onclick="aiQuick('Which invoices are overdue and what is the total outstanding amount?')">Overdue invoices</button>
+    <button class="ai-qp" onclick="aiQuick('What shipments are arriving this week?')">Incoming shipments</button>
+    <button class="ai-qp" onclick="aiQuick('Draft a daily briefing based on my current dashboard data.')">Daily briefing</button>
+  </div>
+
+  <!-- Chat -->
+  <div class="ai-body" id="aiBody">
+    <div class="ai-msg-wrap">
+      <div class="ai-msg ai">Hello! I can see your dashboard data. Ask me about your deals, stock, invoices, shipments — or say "daily briefing" for an AI summary of your day.</div>
+    </div>
+  </div>
+  <div class="ai-input-row">
+    <input class="ai-input" id="aiInput" placeholder="Ask about your business…" onkeydown="if(event.key==='Enter')aiSend()">
+    <button class="ai-send" id="aiSendBtn" onclick="aiSend()">
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><line x1="18" y1="2" x2="9" y2="11" stroke="white" stroke-width="2.2"/><polygon points="18 2 12 18 9 11 2 8 18 2" fill="white"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════
+   STEELDESK — dashboard.js
+   All Supabase logic preserved exactly.
+   Only UI/design shell changed.
+═══════════════════════════════════════════ */
+const SB_URL='https://fmmfofjkebdsrnkchrfo.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtbWZvZmprZWJkc3Jua2NocmZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MDAxNDIsImV4cCI6MjA5MjA3NjE0Mn0.bQQJt06mucLCQCrY1NgN-ed2ngDeRLmITmOfQCAM7ZU';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+let wonChartInst=null,stageChartInst=null,plChartInst=null;
+
+// ── Dark mode ──
+function toggleDark(){
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('sd_theme',t);
+  updateDarkBtn(t);
+  if(wonChartInst||stageChartInst||plChartInst)loadDashboard();
+}
+function updateDarkBtn(t){
+  const b=document.getElementById('darkBtn');if(!b)return;
+  b.innerHTML=t==='dark'
+    ?'<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="4"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"/></svg> Light mode'
+    :'<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 14A7 7 0 117 3a7 7 0 0010 11z"/></svg> Dark mode';
+}
+(()=>{
+  const t=localStorage.getItem('sd_theme')||'light';
+  document.documentElement.setAttribute('data-theme',t);
+  setTimeout(()=>updateDarkBtn(t),50);
+})();
+
+// ── Sidebar ──
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sbOverlay').classList.add('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sbOverlay').classList.remove('open');
+}
+
+// ── Toast ──
+let _tt=null;
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.style.background=type==='err'?'var(--red-text)':type==='warn'?'var(--amber-text)':'var(--text)';
+  el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ── Helpers ──
+function fmtUSD(n){return'$'+Number(n||0).toLocaleString('en-US',{maximumFractionDigits:0});}
+function fmtNum(n){return Number(n||0).toLocaleString('en-US',{maximumFractionDigits:0});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function timeAgo(ts){
+  if(!ts)return'';
+  const s=Math.floor((Date.now()-new Date(ts))/1000);
+  if(s<60)return s+'s ago';
+  if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+
+// ── Market prices (localStorage) ──
+function loadPrices(){
+  try{
+    const p=JSON.parse(localStorage.getItem('sd_market_prices')||'{}');
+    const fmt=v=>v?'$'+Number(v).toLocaleString()+'/t':'—';
+    document.getElementById('p-hrc').textContent=fmt(p.hrc);
+    document.getElementById('p-rebar').textContent=fmt(p.rebar);
+    document.getElementById('p-scrap').textContent=fmt(p.scrap);
+    document.getElementById('p-ore').textContent=fmt(p.ore);
+    document.getElementById('p-eurusd').textContent=p.eurusd?Number(p.eurusd).toFixed(4):'—';
+  }catch(e){}
+}
+function openPriceEdit(){
+  const p=JSON.parse(localStorage.getItem('sd_market_prices')||'{}');
+  const vals=[
+    {k:'hrc',l:'HRC Turkey FOB ($/t)'},
+    {k:'rebar',l:'Rebar Turkey FOB ($/t)'},
+    {k:'scrap',l:'Scrap HMS CFR ($/t)'},
+    {k:'ore',l:'Iron Ore 62% CFR ($/t)'},
+    {k:'eurusd',l:'EUR/USD Rate'},
+  ];
+  const fields=vals.map(v=>`<div class="form-row" style="margin-bottom:10px"><label class="lbl">${v.l}</label><input class="inp" id="pe-${v.k}" type="number" value="${p[v.k]||''}" placeholder="—" step="0.0001" style="height:36px;font-size:13px"></div>`).join('');
+  const div=document.createElement('div');
+  div.style.cssText='position:fixed;inset:0;background:rgba(10,14,24,.5);z-index:600;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)';
+  div.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.15)"><div style="font-size:15px;font-weight:600;margin-bottom:16px">✏ Market Prices</div>${fields}<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px"><button onclick="this.closest('.price-modal').remove()" class="btn">Cancel</button><button onclick="savePrices(this)" class="btn btn-primary">Save</button></div></div>`;
+  div.className='price-modal';
+  document.body.appendChild(div);
+}
+function savePrices(btn){
+  const keys=['hrc','rebar','scrap','ore','eurusd'];
+  const p={};
+  keys.forEach(k=>{const v=document.getElementById('pe-'+k)?.value;if(v)p[k]=v;});
+  localStorage.setItem('sd_market_prices',JSON.stringify(p));
+  btn.closest('.price-modal').remove();
+  loadPrices();
+  toast('Prices updated');
+}
+
+// ── Auth ──
+document.getElementById('loginBtn').addEventListener('click',doLogin);
+document.getElementById('loginEmail').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+function showAuthMsg(m){const e=document.getElementById('authMsg');e.textContent=m;e.style.display='block';}
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('loginPassword').value;
+  if(!email||!pass)return showAuthMsg('Please fill in all fields.');
+  const btn=document.getElementById('loginBtn');btn.disabled=true;btn.textContent='Signing in…';
+  const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  btn.disabled=false;btn.textContent='Sign in';
+  if(error)return showAuthMsg(error.message);
+  onSignedIn(data.user);
+}
+document.getElementById('logoutBtn').addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
+
+async function onSignedIn(user){
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  // Set user display
+  const email=user.email||'';
+  document.getElementById('userEmail').textContent=email;
+  const initials=(email.split('@')[0]||'?').slice(0,2).toUpperCase();
+  document.getElementById('sbAvatar').textContent=initials;
+  // Check admin
+  const{data:prof}=await sb.from('profiles').select('is_admin,full_name').eq('id',user.id).single();
+  if(prof?.is_admin){
+    document.getElementById('adminBadgeWrap').style.display='block';
+    document.getElementById('userRole').textContent='Admin';
+  }
+  if(prof?.full_name){
+    document.getElementById('userEmail').textContent=prof.full_name;
+    const nm=prof.full_name.split(' ');
+    document.getElementById('sbAvatar').textContent=((nm[0]||'?')[0]+(nm[1]||'')[0]||'?').toUpperCase();
+  }
+  loadPrices();
+  aiInitCtx();
+  await loadDashboard();
+}
+sb.auth.getSession().then(({data:{session}})=>{if(session)onSignedIn(session.user);});
+
+// ── Event listeners ──
+document.getElementById('menuBtn').addEventListener('click',openSidebar);
+document.getElementById('sbOverlay').addEventListener('click',closeSidebar);
+document.getElementById('darkBtn').addEventListener('click',toggleDark);
+document.getElementById('refreshBtn').addEventListener('click',loadDashboard);
+
+// ── MAIN LOAD (preserved exactly from original) ──
+async function loadDashboard(){
+  document.getElementById('refreshBtn').disabled=true;
+  document.getElementById('refreshBtn').textContent='↻ Loading…';
+
+  const today=new Date().toISOString().slice(0,10);
+  const monthStart=today.slice(0,7)+'-01';
+  const weekEnd=new Date(Date.now()+7*864e5).toISOString().slice(0,10);
+
+  const[leadsRes,stockRes,shipmentsRes,invoicesRes,posRes,profilesRes]=await Promise.all([
+    sb.from('leads').select('id,name,company,stage,value,owner,deadline,created_at,updated_at'),
+    sb.from('stock').select('id,grade,product_type,quantity,buy_price,created_at'),
+    sb.from('shipments').select('id,shipment_ref,customer,status,eta,weight_tons,created_at,updated_at'),
+    sb.from('invoices').select('id,invoice_no,customer,total_usd,paid_amount,due_date,status,created_at,updated_at'),
+    sb.from('purchase_orders').select('id,po_number,supplier_id,total_value,delivery_date,status,created_at'),
+    sb.from('profiles').select('id,email,full_name'),
+  ]);
+
+  const leads=leadsRes.data||[];
+  const stock=stockRes.data||[];
+  const shipments=shipmentsRes.data||[];
+  const invoices=invoicesRes.data||[];
+  const pos=posRes.data||[];
+  const profiles=profilesRes.data||[];
+
+  let thresholds={};
+  try{thresholds=JSON.parse(localStorage.getItem('sp_thresholds')||'{}');}catch(e){}
+
+  // ── KPIs (preserved exactly) ──
+  const openLeads=leads.filter(l=>l.stage!=='Closed Won'&&l.stage!=='Closed Lost');
+  const pipeline=openLeads.reduce((s,l)=>s+(Number(l.value)||0),0);
+  const wonMonth=leads.filter(l=>l.stage==='Closed Won'&&(l.updated_at||'').slice(0,7)===today.slice(0,7));
+  const wonVal=wonMonth.reduce((s,l)=>s+(Number(l.value)||0),0);
+  const stockVal=stock.reduce((s,i)=>s+(Number(i.quantity)||0)*(Number(i.buy_price)||0),0);
+  const openInvoices=invoices.filter(i=>i.status!=='Paid');
+  const arTotal=openInvoices.reduce((s,i)=>s+(Number(i.total_usd)||0)-(Number(i.paid_amount)||0),0);
+  const activeShips=shipments.filter(s=>s.status!=='Delivered').length;
+  const openPOs=pos.filter(p=>!['Received','Cancelled'].includes(p.status));
+  const poSpend=openPOs.reduce((s,p)=>s+(Number(p.total_value)||0),0);
+
+  document.getElementById('kpi-pipeline').textContent=fmtUSD(pipeline);
+  document.getElementById('kpi-pipeline-sub').textContent=openLeads.length+' open deals';
+  document.getElementById('kpi-won').textContent=fmtUSD(wonVal);
+  document.getElementById('kpi-won-sub').textContent=wonMonth.length+' deals this month';
+  document.getElementById('kpi-stock').textContent=fmtUSD(stockVal);
+  document.getElementById('kpi-stock-sub').textContent=stock.length+' items';
+  document.getElementById('kpi-ar').textContent=fmtUSD(arTotal);
+  document.getElementById('kpi-ar-sub').textContent=openInvoices.length+' unpaid invoices';
+  document.getElementById('kpi-ships').textContent=activeShips;
+  document.getElementById('kpi-ships-sub').textContent=shipments.length+' total';
+  document.getElementById('kpi-pos').textContent=openPOs.length;
+  document.getElementById('kpi-pos-sub').textContent=fmtUSD(poSpend)+' committed';
+
+  // ── Charts (preserved exactly) ──
+  renderWonChart(leads,today);
+  renderStageChart(openLeads);
+  renderPLChart(invoices);
+
+  // ── Alerts (preserved exactly, links updated to new page names) ──
+  const overdueInv=invoices.filter(i=>i.status!=='Paid'&&i.due_date&&i.due_date<today);
+  document.getElementById('cnt-inv').textContent=overdueInv.length;
+  renderAlerts('alerts-inv',overdueInv.slice(0,5).map(i=>({
+    icon:'🧾',text:esc(i.invoice_no||'Invoice')+' — '+esc(i.customer||'—'),
+    sub:'Due '+i.due_date+' · '+fmtUSD((Number(i.total_usd)||0)-(Number(i.paid_amount)||0))+' outstanding',
+    href:'finance.html'
+  })),'No overdue invoices ✓');
+
+  const duePOs=openPOs.filter(p=>p.delivery_date&&p.delivery_date>=today&&p.delivery_date<=weekEnd);
+  document.getElementById('cnt-po').textContent=duePOs.length;
+  renderAlerts('alerts-po',duePOs.slice(0,5).map(p=>({
+    icon:'🛒',text:esc(p.po_number||'PO'),
+    sub:'Delivery: '+p.delivery_date+' · '+fmtUSD(p.total_value),
+    href:'finance.html'
+  })),'No POs due this week ✓');
+
+  const overdueLeads=openLeads.filter(l=>l.deadline&&l.deadline<today);
+  document.getElementById('cnt-leads').textContent=overdueLeads.length;
+  renderAlerts('alerts-leads',overdueLeads.slice(0,5).map(l=>({
+    icon:'📋',text:esc(l.company||l.name||'Lead'),
+    sub:'Deadline: '+l.deadline+' · '+esc(l.stage||''),
+    href:'deals.html'
+  })),'No overdue deals ✓');
+
+  const lowStock=stock.filter(s=>{
+    const t=thresholds[(s.product_type||'').trim()];
+    return t&&(Number(s.quantity)||0)<t;
+  });
+  document.getElementById('cnt-stock').textContent=lowStock.length;
+  renderAlerts('alerts-stock',lowStock.slice(0,5).map(s=>({
+    icon:'📦',text:esc(s.grade||s.product_type||'Item'),
+    sub:'Qty: '+s.quantity+' (threshold: '+thresholds[(s.product_type||'').trim()]+')',
+    href:'stock.html'
+  })),'No low stock alerts ✓');
+
+  // ── Feed ──
+  renderFeed(leads,shipments,invoices,pos,profiles,today);
+
+  // ── Update AI context ──
+  aiDashCtx={openLeads:openLeads.length,pipeline:fmtUSD(pipeline),overdueInv:overdueInv.length,arTotal:fmtUSD(arTotal),activeShips,stock:stock.length,stockVal:fmtUSD(stockVal)};
+  aiInitCtx();
+
+  document.getElementById('refreshTs').textContent='Updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('refreshBtn').disabled=false;
+  document.getElementById('refreshBtn').textContent='↻ Refresh';
+}
+
+function renderAlerts(containerId,items,emptyMsg){
+  const el=document.getElementById(containerId);
+  if(!items.length){el.innerHTML='<div class="alert-empty">'+emptyMsg+'</div>';return;}
+  el.innerHTML='';
+  items.forEach(item=>{
+    const a=document.createElement('a');
+    a.className='alert-item';a.href=item.href;
+    a.innerHTML='<div class="alert-ic">'+item.icon+'</div>'+
+      '<div><div class="alert-tx">'+item.text+'</div><div class="alert-sx">'+item.sub+'</div></div>';
+    el.appendChild(a);
+  });
+}
+
+// ── Won Revenue chart (preserved exactly) ──
+function renderWonChart(leads,today){
+  const months=[];for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);months.push(d.toISOString().slice(0,7));}
+  const labels=months.map(m=>{const[y,mo]=m.split('-');return new Date(y,mo-1).toLocaleString('en-US',{month:'short'});});
+  const data=months.map(m=>leads.filter(l=>l.stage==='Closed Won'&&(l.updated_at||'').slice(0,7)===m).reduce((s,l)=>s+(Number(l.value)||0),0));
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const gc=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.04)';
+  const tc=isDark?'#58687A':'#8896A8';
+  const ctx=document.getElementById('wonChart').getContext('2d');
+  if(wonChartInst)wonChartInst.destroy();
+  wonChartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Won Revenue',data,backgroundColor:data.map(v=>v>0?'rgba(14,138,95,.75)':'rgba(24,95,165,.25)'),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:10,family:'DM Sans'}},grid:{display:false}},y:{ticks:{color:tc,font:{size:10,family:'DM Sans'},callback:v=>'$'+v.toLocaleString()},grid:{color:gc}}}}});
+}
+
+// ── Pipeline by Stage donut (preserved exactly) ──
+function renderStageChart(openLeads){
+  const STAGES=['Lead/Prospect','Qualified','Offer Sent','Negotiation'];
+  const vals=STAGES.map(s=>openLeads.filter(l=>l.stage===s).reduce((sum,l)=>sum+(Number(l.value)||0),0));
+  const COLORS=['#185FA5','#C47D00','#6B5ED4','#0E8A5F'];
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const tc=isDark?'#58687A':'#8896A8';
+  const ctx=document.getElementById('stageChart').getContext('2d');
+  if(stageChartInst)stageChartInst.destroy();
+  stageChartInst=new Chart(ctx,{type:'doughnut',data:{labels:STAGES,datasets:[{data:vals,backgroundColor:COLORS,borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:tc,font:{family:'DM Sans',size:10},padding:8,boxWidth:10}}}}});
+}
+
+// ── P&L line chart (preserved exactly) ──
+function renderPLChart(invoices){
+  const months=[];for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);months.push(d.toISOString().slice(0,7));}
+  const labels=months.map(m=>{const[y,mo]=m.split('-');return new Date(y,mo-1).toLocaleString('en-US',{month:'short'});});
+  const rev=months.map(m=>invoices.filter(i=>i.created_at?.slice(0,7)===m).reduce((s,i)=>s+(Number(i.total_usd)||0),0));
+  const paid=months.map(m=>invoices.filter(i=>i.updated_at?.slice(0,7)===m&&i.status==='Paid').reduce((s,i)=>s+(Number(i.paid_amount)||Number(i.total_usd)||0),0));
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const gc=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.04)';
+  const tc=isDark?'#58687A':'#8896A8';
+  const ctx=document.getElementById('plChart').getContext('2d');
+  if(plChartInst)plChartInst.destroy();
+  plChartInst=new Chart(ctx,{data:{labels,datasets:[
+    {type:'bar',label:'Invoiced',data:rev,backgroundColor:'rgba(24,95,165,.55)',borderRadius:4},
+    {type:'line',label:'Collected',data:paid,borderColor:'#0E8A5F',backgroundColor:'rgba(14,138,95,.1)',borderWidth:2,pointRadius:4,tension:.3,fill:true},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tc,font:{family:'DM Sans',size:11}}}},scales:{x:{ticks:{color:tc,font:{size:10,family:'DM Sans'}},grid:{display:false}},y:{ticks:{color:tc,font:{size:10,family:'DM Sans'},callback:v=>'$'+v.toLocaleString()},grid:{color:gc}}}}});
+}
+
+// ── Activity feed (preserved exactly) ──
+function renderFeed(leads,shipments,invoices,pos,profiles,today){
+  const events=[];
+  leads.filter(l=>l.stage==='Closed Won').slice(0,5).forEach(l=>events.push({ts:l.updated_at||l.created_at,icon:'🏆',text:'Deal won: '+esc(l.company||l.name||'Lead'),sub:fmtUSD(l.value)+' · '+esc(l.owner||'—')}));
+  leads.filter(l=>l.stage!=='Closed Won'&&l.stage!=='Closed Lost').slice(0,5).forEach(l=>events.push({ts:l.created_at,icon:'📋',text:'New deal: '+esc(l.company||l.name||'—'),sub:esc(l.stage||'')+' · '+esc(l.owner||'—')}));
+  shipments.slice(0,5).forEach(s=>events.push({ts:s.updated_at||s.created_at,icon:'🚢',text:'Shipment '+esc(s.shipment_ref||'—')+': '+esc(s.status||'—'),sub:esc(s.customer||'—')}));
+  invoices.filter(i=>i.status==='Paid').slice(0,5).forEach(i=>events.push({ts:i.updated_at||i.created_at,icon:'💰',text:'Invoice paid: '+esc(i.invoice_no||'—'),sub:fmtUSD(i.total_usd)+' · '+esc(i.customer||'—')}));
+  pos.slice(0,5).forEach(p=>events.push({ts:p.created_at,icon:'🛒',text:'PO created: '+esc(p.po_number||'—'),sub:fmtUSD(p.total_value)+' · '+esc(p.status||'')}));
+  events.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  const top=events.slice(0,15);
+  const feed=document.getElementById('feedList');
+  if(!top.length){feed.innerHTML='<div style="padding:20px;text-align:center;color:var(--text4);font-size:12px">No activity yet.</div>';return;}
+  feed.innerHTML='';
+  top.forEach(ev=>{
+    const div=document.createElement('div');div.className='feed-item';
+    div.innerHTML='<div class="feed-ic">'+ev.icon+'</div>'+
+      '<div><div class="feed-tx">'+ev.text+'</div>'+
+      '<div class="feed-meta"><span>'+ev.sub+'</span><span>'+timeAgo(ev.ts)+'</span></div></div>';
+    feed.appendChild(div);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   AI DRAWER
+═══════════════════════════════════════════ */
+const AI_PROVIDERS={
+  anthropic:{label:'Claude',placeholder:'sk-ant-api03-…',models:[{id:'claude-sonnet-4-6',label:'Sonnet 4.6'},{id:'claude-haiku-4-5-20251001',label:'Haiku 4.5'},{id:'claude-opus-4-6',label:'Opus 4.6'}]},
+  gemini:{label:'Gemini',placeholder:'AIza…',models:[{id:'gemini-2.5-flash',label:'Gemini 2.5 Flash (free)'},{id:'gemini-2.5-flash-lite',label:'Gemini 2.5 Lite (free)'},{id:'gemini-2.5-pro',label:'Gemini 2.5 Pro'}]},
+  groq:{label:'Groq',placeholder:'gsk_…',baseUrl:'https://api.groq.com/openai/v1',models:[{id:'llama-3.3-70b-versatile',label:'Llama 3.3 70B (free)'},{id:'llama-3.1-8b-instant',label:'Llama 3.1 8B (free)'}]},
+  openai:{label:'OpenAI',placeholder:'sk-…',models:[{id:'gpt-4o-mini',label:'GPT-4o Mini'},{id:'gpt-4o',label:'GPT-4o'}]},
+  mistral:{label:'Mistral',placeholder:'…',baseUrl:'https://api.mistral.ai/v1',models:[{id:'mistral-small-latest',label:'Mistral Small'},{id:'mistral-medium-latest',label:'Mistral Medium'}]},
+  custom:{label:'Custom',placeholder:'api-key',hasUrl:true,hasModel:true,models:[]}
+};
+
+let aiState={provider:'groq',model:'llama-3.3-70b-versatile',keys:{},keyActive:{},customUrl:'',customModel:''};
+let aiMsgs=[];
+let aiStreaming=false;
+let aiDashCtx={};
+let aiSettingsOpen=false;
+
+function aiLoad(){
+  try{
+    const s=JSON.parse(localStorage.getItem('sd_ai')||'{}');
+    if(s.provider&&AI_PROVIDERS[s.provider])aiState.provider=s.provider;
+    if(s.model)aiState.model=s.model;
+    if(s.keys)aiState.keys=s.keys;
+    if(s.keyActive)aiState.keyActive=s.keyActive;
+    if(s.customUrl)aiState.customUrl=s.customUrl;
+    if(s.customModel)aiState.customModel=s.customModel;
+  }catch(e){}
+  // migrate old key
+  const old=localStorage.getItem('sp_claude_key');
+  if(old&&!aiState.keys.anthropic){aiState.keys.anthropic=old;aiState.keyActive.anthropic=true;aiSave();}
+  renderAISettings();
+  updateAILabel();
+}
+function aiSave(){localStorage.setItem('sd_ai',JSON.stringify(aiState));}
+
+function aiGetKey(){
+  const k=aiState.keys[aiState.provider]||'';
+  if(!k||aiState.keyActive[aiState.provider]===false)return'';
+  return k;
+}
+
+function openAI(){
+  document.getElementById('aiDrawer').classList.add('open');
+  document.getElementById('aiOverlay').classList.add('open');
+  document.getElementById('aiInput').focus();
+}
+function closeAI(){
+  document.getElementById('aiDrawer').classList.remove('open');
+  document.getElementById('aiOverlay').classList.remove('open');
+}
+function toggleAISettings(){
+  aiSettingsOpen=!aiSettingsOpen;
+  document.getElementById('aiSettingsPanel').classList.toggle('open',aiSettingsOpen);
+}
+
+document.getElementById('aiBtn').addEventListener('click',openAI);
+document.getElementById('aiOverlay').addEventListener('click',closeAI);
+
+function aiInitCtx(){
+  const p=AI_PROVIDERS[aiState.provider];
+  const m=p?.models?.find(m=>m.id===aiState.model);
+  const ctx=aiDashCtx.openLeads!=null
+    ?`Dashboard · ${aiDashCtx.openLeads} deals · ${aiDashCtx.pipeline} pipeline · ${aiDashCtx.overdueInv} overdue invoices`
+    :'Dashboard';
+  document.getElementById('aiCtx').textContent=ctx;
+}
+
+function renderAISettings(){
+  // Provider dropdown
+  const psel=document.getElementById('aiProviderSel');
+  psel.innerHTML=Object.entries(AI_PROVIDERS).map(([id,p])=>
+    `<option value="${id}" ${aiState.provider===id?'selected':''}>${p.label}</option>`).join('');
+  // Model dropdown
+  const msel=document.getElementById('aiModelSel');
+  const prov=AI_PROVIDERS[aiState.provider];
+  if(prov?.hasModel){
+    msel.innerHTML='<option value="custom">Custom model</option>';
+  } else {
+    const exists=prov?.models?.some(m=>m.id===aiState.model);
+    if(!exists&&prov?.models?.length)aiState.model=prov.models[0].id;
+    msel.innerHTML=(prov?.models||[]).map(m=>`<option value="${m.id}" ${aiState.model===m.id?'selected':''}>${m.label}</option>`).join('');
+  }
+  // Key
+  const key=aiState.keys[aiState.provider]||'';
+  document.getElementById('aiKeyInp').value='';
+  document.getElementById('aiKeyInp').placeholder=prov?.placeholder||'API key…';
+  const status=document.getElementById('aiKeyStatus');
+  if(key){status.textContent='✓ Key saved · '+(aiState.keyActive[aiState.provider]===false?'Deactivated':'Active');status.className='ai-key-status ok';}
+  else{status.textContent='No key saved';status.className='ai-key-status';}
+}
+
+function aiSelectProvider(id){
+  aiState.provider=id;
+  const p=AI_PROVIDERS[id];
+  if(p?.models?.length)aiState.model=p.models[0].id;
+  aiSave();renderAISettings();updateAILabel();
+}
+function aiSaveModelPref(){
+  aiState.model=document.getElementById('aiModelSel').value;
+  aiSave();updateAILabel();
+}
+function aiSaveKey(){
+  const v=(document.getElementById('aiKeyInp').value||'').trim();
+  if(!v){alert('Please paste an API key first.');return;}
+  aiState.keys[aiState.provider]=v;
+  aiState.keyActive[aiState.provider]=true;
+  aiSave();renderAISettings();updateAILabel();
+  document.getElementById('aiKeyInp').value='';
+  toast('API key saved');
+}
+function updateAILabel(){
+  const p=AI_PROVIDERS[aiState.provider];
+  const m=p?.models?.find(m=>m.id===aiState.model);
+  const k=aiGetKey();
+  document.getElementById('aiProviderLabel').textContent=k
+    ?`${p?.label||aiState.provider} · ${m?.label?.split('(')[0].trim()||aiState.model}`
+    :`${p?.label||aiState.provider} · no key`;
+}
+
+// ── AI API caller ──
+async function aiCall(sys,msgs,onChunk){
+  const key=aiGetKey();
+  const p=AI_PROVIDERS[aiState.provider];
+  const model=aiState.model;
+  let full='';
+
+  if(aiState.provider==='anthropic'){
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model,max_tokens:2000,system:sys,messages,stream:true})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e?.error?.message||'HTTP '+r.status);}
+    const reader=r.body.getReader();const dec=new TextDecoder();
+    while(true){const{done,value}=await reader.read();if(done)break;
+      for(const line of dec.decode(value,{stream:true}).split('\n')){
+        if(!line.startsWith('data:'))continue;const d=line.slice(5).trim();if(d==='[DONE]')break;
+        try{const j=JSON.parse(d);if(j.type==='content_block_delta'&&j.delta?.type==='text_delta'){full+=j.delta.text;onChunk(full);}}catch(e){}
+      }
+    }
+  } else if(aiState.provider==='gemini'){
+    const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${key}&alt=sse`;
+    const contents=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents,generationConfig:{maxOutputTokens:2000}})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e?.error?.message||'HTTP '+r.status);}
+    const reader=r.body.getReader();const dec=new TextDecoder();let buf='';
+    while(true){const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');buf=lines.pop()||'';
+      for(const line of lines){if(!line.startsWith('data:'))continue;const d=line.slice(5).trim();if(!d)continue;
+        try{const j=JSON.parse(d);const txt=j.candidates?.[0]?.content?.parts?.[0]?.text||'';if(txt){full+=txt;onChunk(full);}}catch(e){}
+      }
+    }
+  } else {
+    const base=p?.baseUrl||aiState.customUrl||'https://api.openai.com/v1';
+    const useModel=p?.hasModel?aiState.customModel:model;
+    const r=await fetch(`${base}/chat/completions`,{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:useModel,max_tokens:2000,stream:true,messages:[{role:'system',content:sys},...msgs]})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e?.error?.message||'HTTP '+r.status);}
+    const reader=r.body.getReader();const dec=new TextDecoder();
+    while(true){const{done,value}=await reader.read();if(done)break;
+      for(const line of dec.decode(value,{stream:true}).split('\n')){
+        if(!line.startsWith('data:'))continue;const d=line.slice(5).trim();if(d==='[DONE]')break;
+        try{const j=JSON.parse(d);const txt=j.choices?.[0]?.delta?.content||'';if(txt){full+=txt;onChunk(full);}}catch(e){}
+      }
+    }
+  }
+  return full;
+}
+
+function aiSysPrompt(){
+  return`You are a steel trade business assistant embedded in SteelDesk, a platform for a steel trader/broker.
+Be concise and practical. Use steel trade terminology.
+Current dashboard context: ${JSON.stringify(aiDashCtx)}
+Help with: pipeline analysis, deal follow-up emails, invoice reminders, shipment summaries, market insights, offer drafting.
+Answer in the same language the user writes in (English, Turkish, French, or Arabic).`;
+}
+
+function aiAddMsg(role,text,isTyping=false){
+  const body=document.getElementById('aiBody');
+  const wrap=document.createElement('div');
+  wrap.className='ai-msg-wrap'+(role==='user'?' user':'');
+  const div=document.createElement('div');
+  div.className='ai-msg '+role;
+  if(isTyping)div.innerHTML='<div class="ai-dots"><span></span><span></span><span></span></div>';
+  else div.innerHTML=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  wrap.appendChild(div);body.appendChild(wrap);
+  wrap.scrollIntoView({behavior:'smooth',block:'end'});
+  return div;
+}
+
+async function aiSend(){
+  if(aiStreaming)return;
+  const key=aiGetKey();
+  if(!key){
+    toggleAISettings();
+    document.getElementById('aiSettingsPanel').classList.add('open');
+    aiSettingsOpen=true;
+    return;
+  }
+  const inp=document.getElementById('aiInput');
+  const text=(inp.value||'').trim();
+  if(!text)return;
+  inp.value='';
+  document.getElementById('aiSendBtn').disabled=true;
+  aiStreaming=true;
+
+  aiAddMsg('user',text);
+  aiMsgs.push({role:'user',content:text});
+
+  // Typing dots
+  const typingDiv=aiAddMsg('ai','',true);
+  let typingRemoved=false;
+
+  try{
+    const bubble=document.createElement('div');
+    bubble.className='ai-msg ai';
+    const wrap=document.createElement('div');
+    wrap.className='ai-msg-wrap';
+    wrap.style.display='none';
+    wrap.appendChild(bubble);
+    document.getElementById('aiBody').appendChild(wrap);
+
+    const full=await aiCall(aiSysPrompt(),aiMsgs,(text)=>{
+      if(!typingRemoved){typingDiv.parentElement?.remove();wrap.style.display='';typingRemoved=true;}
+      bubble.innerHTML=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+      bubble.scrollIntoView({behavior:'smooth',block:'end'});
+    });
+    aiMsgs.push({role:'assistant',content:full});
+  }catch(e){
+    if(!typingRemoved)typingDiv.parentElement?.remove();
+    aiAddMsg('ai','⚠ '+e.message+'\n\nCheck your API key in Settings above.');
+  }
+
+  aiStreaming=false;
+  document.getElementById('aiSendBtn').disabled=false;
+  document.getElementById('aiInput').focus();
+}
+
+function aiQuick(text){
+  openAI();
+  document.getElementById('aiInput').value=text;
+  aiSend();
+}
+
+// ── Init ──
+(()=>{aiLoad();})();
+</script>
+</body>
+</html>
